@@ -17,6 +17,7 @@ Two people maintain it, each through their own Claude account. Every change must
   - `/* ---- SCENE ---- */ build()`: lights, materials (`wallM`, `accentM`, and so on), the room, then each prop under a `// ---- N. Name ----` comment.
   - `/* ---- CAMERA / MOVE ---- */`, `/* ---- UI ---- */` and `/* ---- LOOP ---- */`: navigation, product panel, catalogue and render loop.
 - `data/products.js`: product content (`window.CATS`, `window.PRODUCTS`). Keep content out of `index.html`.
+- `data/catalog.js`: the real PPPB catalog (`window.CATALOG`) — 105 brands / 204 products from the 2025 (periods 1–3) and 2026 PDF catalogs, with contacts, FOB, MOQ, loadability and (for most 2026 brands) export markets. Photos are in `photos/catalog/<product-id>.jpg`. This is the source of truth for the showroom going forward; `data/products.js` is the old 9-product demo.
 - `photos/<id>.jpg`: optional product photos. If a photo is missing, the product falls back to a placeholder.
 
 ## Scene conventions
