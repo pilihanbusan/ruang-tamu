@@ -529,8 +529,16 @@ textarea.input { min-height: 90px; resize: vertical; }
   .in-rule { width: 64px; height: 1px; background: var(--color-accent-400); margin: var(--space-4) 0 0; }
   .in-program { font-family: var(--font-heading); font-weight: 400; font-size: clamp(22px, 2.4vw, 32px); letter-spacing: .32em; color: var(--color-accent-300); margin: 0; }
   .in-cta { display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; margin-top: var(--space-6); }
-  #enter { white-space: nowrap; padding: 14px 26px; font-size: 16px; letter-spacing: .16em; }
-  #enter .corner { color: color-mix(in srgb, var(--color-bg) 60%, transparent); }
+  .in-years { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+  .year-btn { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; white-space: nowrap; padding: 12px 24px; min-width: 150px; }
+  .year-btn .corner { color: color-mix(in srgb, var(--color-bg) 60%, transparent); }
+  .yb-t { font-size: 18px; letter-spacing: .14em; }
+  .yb-s { font-family: var(--font-body); font-size: 11px; font-weight: 400; letter-spacing: .06em; opacity: .8; }
+  .year-btn[disabled] { opacity: .55; }
+  .nb-year b { font-weight: 600; white-space: nowrap; }
+  @media (max-width: 980px) { .nb-year .yr-pre { display: none; } .nb-year #yr-label { display: inline; } }
+  .dt-note { font-size: 12px; margin: var(--space-3) 0 0; }
+  .dt-actions .btn { text-decoration: none; }
   .in-load { display: flex; flex-direction: column; gap: 6px; min-width: 180px; }
   .in-bar { height: 1px; background: color-mix(in srgb, var(--color-bg) 18%, transparent); overflow: hidden; }
   #load-bar { height: 100%; background: var(--color-accent-300); transform: scaleX(0); transform-origin: left; transition: transform .3s; }
@@ -559,6 +567,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     #modal { padding: 80px 10px 10px; }
     #hint { display: none; }
     .bm-sub { display: none; }
+    .year-btn { min-width: 0; flex: 1; padding: 12px 16px; }
     .topbar { top: 10px; left: 10px; right: 10px; padding-left: 14px; }
     #drawer { top: 76px; left: 10px; bottom: 10px; width: calc(100vw - 20px); padding: var(--space-4); }
     .dock { bottom: 10px; }
@@ -585,6 +594,7 @@ textarea.input { min-height: 90px; resize: vertical; }
     <button class="nb" data-nav="all" data-icon="grid"><span>All Products</span></button>
     <button class="nb" data-nav="featured" data-icon="star"><span>Featured</span></button>
     <button class="nb" data-nav="about" data-icon="info"><span>About Pilihan BuSan</span></button>
+    <button class="nb nb-year" data-nav="year" data-icon="swap" aria-label="Ganti angkatan"><b><span class="yr-pre">PPPB </span><span id="yr-label">2026</span></b></button>
   </nav>
 </header>
 
@@ -619,7 +629,10 @@ textarea.input { min-height: 90px; resize: vertical; }
     <div class="in-rule"></div>
     <p class="in-program">PILIHAN BUSAN</p>
     <div class="in-cta">
-      <button id="enter" class="btn btn-primary blueprint" disabled=""><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span>ENTER SHOWROOM</span></button>
+      <div class="in-years" role="group" aria-label="Pilih angkatan">
+        <button class="btn btn-primary blueprint year-btn" data-year="2025" disabled=""><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span class="yb-t">PPPB 2025</span><span class="yb-s" data-stat="2025"></span></button>
+        <button class="btn btn-primary blueprint year-btn" data-year="2026" disabled=""><i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i><span class="yb-t">PPPB 2026</span><span class="yb-s" data-stat="2026"></span></button>
+      </div>
       <div class="in-load"><div class="in-bar"><div id="load-bar"></div></div><span id="load-txt">Memuat ruangan · 0%</span></div>
     </div>
     <span class="in-foot">Kementerian Perdagangan Republik Indonesia</span>
@@ -632,16 +645,14 @@ textarea.input { min-height: 90px; resize: vertical; }
 </section>
 
 
+<script src="data/catalog.js"></script>
+<script src="data/pajangan.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 {
-const { PRODUCTS, SHOWROOM, GROUPS } = (() => {
-// Product database — the single source of truth for every display in the room.
-// To add a product: drop photos into assets/products/<id>.jpg (detail, ≤1800px)
-// and assets/textures/<id>.jpg (3D display, ≤720px), add an entry below, and
-// set `display` to a free slot id (see SLOTS in room.js).
-// Fields left null render as "akan dilengkapi" in the UI — fill them in when data is available.
+const { PRODUCTS, SHOWROOM, GROUPS, YEARS, yearStats, setYearData } = (() => {
+// Showroom text. Products come from data/catalog.js (per year) — see productsFor() below.
 
 const SHOWROOM = {
   title: 'Ruang Mendag',
@@ -655,139 +666,39 @@ const SHOWROOM = {
   gallery: ['assets/img/895421b1ea.jpg', 'assets/img/b3c77bc584.jpg', 'assets/img/f0a1044000.jpg']
 };
 
-const GROUPS = ['Makanan & Minuman', 'Rumah & Dapur', 'Kriya & Fashion'];
+// Produk diambil dari katalog resmi PPPB (data/catalog.js, window.CATALOG).
+// Produk yang dipajang di 13 tempat pajang ditentukan per angkatan di data/pajangan.js.
+const SECTION = { craft: 'Kriya & Fashion', food: 'Makanan & Minuman' };
+const PERIOD = { '2025-1': 'PPPB 2025 · Periode 1', '2025-2': 'PPPB 2025 · Periode 2', '2025-3': 'PPPB 2025 · Periode 3', '2026': 'PPPB 2026' };
+const YEARS = ['2025', '2026'];
+const GROUPS = [];
+const PRODUCTS = [];
+const CAT = window.CATALOG || [];
+const yearStats = y => { const bs = CAT.filter(b => String(b.period).startsWith(y)); return { brands: bs.length, products: bs.reduce((n, b) => n + b.products.length, 0) }; };
+function productsFor(year) {
+  const pick = (window.PAJANGAN || {})[year] || {}, slotOf = {};
+  Object.entries(pick).forEach(([slot, pid]) => { if (pid) slotOf[pid] = slot; });
+  const out = [];
+  CAT.filter(b => String(b.period).startsWith(year)).forEach(b => b.products.forEach(q => {
+    const spec = [['Dimensi', q.dimension], ['Material', q.material], ['Finishing', q.finishing], ['Berat', q.weight], ['Sertifikasi', q.cert], ['Harga FOB', q.fob ? 'USD ' + String(q.fob).replace(/^\s*(USD|US\$|\$)\s*/i, '') : null], ['MOQ', q.moq], ['Loadability', q.load]].filter(([, v]) => v && String(v).trim());
+    out.push({
+      id: q.id, featured: !!slotOf[q.id], display: slotOf[q.id] || null,
+      group: SECTION[b.section] || 'Lainnya', category: SECTION[b.section] || 'Produk',
+      brand: b.brand, name: q.name, image: q.photo, texture: q.photo,
+      description: q.desc || '', specs: spec, variants: [], details: [], certifications: [],
+      exported: b.exportedTo || [], targets: b.targetMarkets || [],
+      msme: { name: b.company || b.brand, location: b.address || null, period: PERIOD[b.period] || b.period, phone: b.phone || null, email: b.email || null, instagram: b.instagram || null, web: b.web || null }
+    });
+  }));
+  out.sort((x, y) => (y.featured - x.featured));
+  return out;
+}
+function setYearData(year) {
+  PRODUCTS.splice(0, PRODUCTS.length, ...productsFor(year));
+  GROUPS.splice(0, GROUPS.length, ...Object.values(SECTION).filter(g => PRODUCTS.some(p => p.group === g)));
+}
 
-const PRODUCTS = [
-  {
-    id: 'azaki', featured: false, group: 'Makanan & Minuman',
-    brand: 'Azaki — Rajanya Tempe', name: 'Protein Crunchy Bites', category: 'Camilan Sehat',
-    image: 'assets/img/618a05b17a.jpg', texture: 'assets/img/2074c41600.jpg',
-    description: 'Camilan renyah tinggi protein yang dibuat dari tempe Indonesia. Vegan dan bebas gluten, dikemas dalam standing pouch 65 g.',
-    variants: ['Sea Salt', 'Sweet & Spicy', 'Original'],
-    details: ['Kaya protein, sumber serat, bebas lemak trans', '20–25 g protein per kemasan (sesuai varian)', 'Vegan · Gluten free', 'Sustainable U.S. Soy'],
-    certifications: ['Halal', 'HACCP'],
-    msme: { name: 'Azaki', location: 'Indonesia', note: null },
-    display: 'table-1b'
-  },
-  {
-    id: 'rendang-gadih', featured: true, group: 'Makanan & Minuman',
-    brand: 'Rendang Gadih', name: 'Rendang Siap Saji', category: 'Makanan Olahan',
-    image: 'assets/img/d94f7d1647.jpg', texture: 'assets/img/85094b6f63.jpg',
-    description: 'Rendang khas Minang dalam kemasan siap saji — dari irisan daging sapi hingga suwiran ayam, plus bumbu rendang instan untuk dimasak di rumah.',
-    variants: ['Rendang Daging Sapi Iris 250 g', 'Rendang Daging Sapi Suwir 150 g', 'Rendang Ayam Suwir 150 g', 'Bumbu Rendang Instan'],
-    details: ['Delicious Taste', 'Resep tradisional Minangkabau'],
-    certifications: ['Halal', 'BPOM RI MD', 'SNI'],
-    msme: { name: 'PT Gadih Minang Anugerah', location: 'Payakumbuh, Sumatera Barat', note: null },
-    display: 'table-1a'
-  },
-  {
-    id: 'sagolicious', featured: true, group: 'Makanan & Minuman',
-    brand: 'Sagolicious — The Queen of Sago', name: 'Sago Chips & Mi Sagu', category: 'Camilan & Mi Sagu',
-    image: 'assets/img/faf9a450da.jpg', texture: 'assets/img/52294c5af1.jpg',
-    description: 'Olahan sagu Papua: keripik sagu sebagai camilan sehat, serta mi sagu bebas gluten dengan pilihan rasa Ramen dan Creamy Curry.',
-    variants: ['Sago Chips — Healthy Snack', 'Mi Sagu Ramen 105 g', 'Mi Sagu Creamy Curry 105 g'],
-    details: ['100% Sagu Papua', 'Gluten free · Low GI · Non-GMO', 'High fibre · No added preservatives', 'Keripik: Non-MSG'],
-    certifications: ['Halal'],
-    msme: { name: 'Sagolicious Indonesia Prima', location: 'Indonesia', note: null },
-    display: 'table-2a'
-  },
-  {
-    id: 'la-moringa', featured: false, group: 'Makanan & Minuman',
-    brand: 'La Moringa Indonesia', name: 'Moringa Sorghum Biscuit & Drip Tea', category: 'Makanan & Minuman Sehat',
-    image: 'assets/img/c347ded8b3.jpg', texture: 'assets/img/4783605498.jpg',
-    description: 'Biskuit kelor dan sorgum serta teh celup kelor premium. "Stay Moringa, Stay Healthy."',
-    variants: ['Moringa Sorghum Biscuit 160 g (8 × 20 g)', 'Moringa Drip Tea 50 g (10 tea bags)'],
-    details: ['Biskuit: tinggi serat, bebas gluten, bebas gula, 0% lemak trans', 'Teh: Premium Moringa Tea'],
-    certifications: ['Halal'],
-    msme: { name: 'PT Beta Moringa Indonesia', location: 'Kupang, Nusa Tenggara Timur', note: null },
-    display: 'side-1'
-  },
-  {
-    id: 'gold-decor', featured: true, group: 'Rumah & Dapur',
-    brand: null, name: 'Koleksi Ornamen Emas', category: 'Dekorasi Rumah',
-    image: 'assets/img/150f7ec352.jpg', texture: 'assets/img/5137a24835.jpg',
-    description: 'Bingkai foto oval dan jam meja berornamen mawar emas, dipadukan dengan dispenser sabun dan tempat sikat gigi hitam berhias bunga emas.',
-    variants: ['Bingkai foto oval', 'Jam meja', 'Dispenser sabun', 'Tempat sikat gigi'],
-    details: ['Relief ornamen mawar bergaya klasik', 'Pump dispenser berwarna emas'],
-    certifications: [],
-    msme: null,
-    display: 'featured'
-  },
-  {
-    id: 'homliv-pesona', featured: false, group: 'Rumah & Dapur',
-    brand: 'homLiv', name: 'Gift Set Peralatan Masak Kayu', category: 'Peralatan Dapur',
-    image: 'assets/img/45a5381202.jpg', texture: 'assets/img/99cf2976b9.jpg',
-    description: 'Set spatula dan sendok kayu dalam kotak hadiah berpita — untuk memasak sehari-hari di rumah.',
-    variants: [], details: ['For daily home cooking', 'Kemasan kotak hadiah dengan pita'],
-    certifications: [], msme: { name: 'homLiv', location: null, note: null },
-    display: 'table-2b'
-  },
-  {
-    id: 'basket-cushion', featured: false, group: 'Kriya & Fashion',
-    brand: null, name: 'Keranjang Anyaman & Sarung Bantal Tenun', category: 'Kriya & Tekstil',
-    image: 'assets/img/c968172f9e.jpg', texture: 'assets/img/6813fdfcea.jpg',
-    description: 'Keranjang anyaman serat alam dengan pegangan, dipadukan sarung bantal bertekstur tenun berwarna oranye dan natural.',
-    variants: [], details: ['Anyaman tangan serat alam', 'Tekstur tenun'],
-    certifications: [], msme: null,
-    display: 'nest-a'
-  },
-  {
-    id: 'wooden-utensils', featured: false, group: 'Rumah & Dapur',
-    brand: null, name: 'Set Spatula & Sendok Kayu', category: 'Peralatan Dapur',
-    image: 'assets/img/e35d890a38.jpg', texture: 'assets/img/0c32c457bb.jpg',
-    description: 'Spatula, sendok, dan penjepit dari kayu utuh, lengkap dengan wadah kayu berbentuk tabung.',
-    variants: [], details: ['Kayu solid dengan finishing natural'],
-    certifications: [], msme: null,
-    display: 'nest-b'
-  },
-  {
-    id: 'homliv-sakura', featured: false, group: 'Rumah & Dapur',
-    brand: 'homLiv', name: 'Sakura — Cherry Blossom', category: 'Wewangian Ruangan',
-    image: 'assets/img/96d951e53c.jpg', texture: 'assets/img/5822a46605.jpg',
-    description: 'Wewangian ruangan beraroma cherry blossom dalam kemasan tabung bernuansa sakura.',
-    variants: [], details: ['Kemasan tabung silinder'],
-    certifications: [], msme: { name: 'homLiv', location: null, note: null },
-    display: 'gunungan-1'
-  },
-  {
-    id: 'leather-tote', featured: false, group: 'Kriya & Fashion',
-    brand: null, name: 'Tas Tote Kulit & Rotan', category: 'Fashion & Aksesori',
-    image: 'assets/img/9b31a12ab4.jpg', texture: 'assets/img/41b2509a90.jpg',
-    description: 'Tas tote kulit cokelat dengan jahitan tangan dan bagian bawah anyaman rotan.',
-    variants: [], details: ['Jahitan tangan (whipstitch)', 'Dasar anyaman rotan'],
-    certifications: [], msme: null,
-    display: 'gunungan-2'
-  },
-  {
-    id: 'sandals', featured: false, group: 'Kriya & Fashion',
-    brand: null, name: 'Sandal Strap Gesper', category: 'Alas Kaki',
-    image: 'assets/img/6e96326e6d.jpg', texture: 'assets/img/1ea509f894.jpg',
-    description: 'Sandal slide dua strap dengan gesper logam rose-gold dan sol empuk.',
-    variants: [], details: ['Gesper logam rose-gold'],
-    certifications: [], msme: null,
-    display: 'console-1'
-  },
-  {
-    id: 'glass-tissue', featured: false, group: 'Rumah & Dapur',
-    brand: null, name: 'Kotak Tisu & Kotak Kaca Bingkai Emas', category: 'Dekorasi Rumah',
-    image: 'assets/img/11569019eb.jpg', texture: 'assets/img/e627a26083.jpg',
-    description: 'Kotak tisu dan kotak heksagonal dari kaca dengan rangka logam emas.',
-    variants: [], details: ['Kaca dengan rangka logam emas'],
-    certifications: [], msme: null,
-    display: 'console-2'
-  },
-  {
-    id: 'batik-jar', featured: false, group: 'Kriya & Fashion',
-    brand: null, name: 'Wadah Motif Mega Mendung & Sendok Saji Kayu', category: 'Kriya',
-    image: 'assets/img/01b0ae2734.jpg', texture: 'assets/img/01b0ae2734.jpg',
-    description: 'Wadah bermotif batik mega mendung dengan sepasang sendok dan garpu saji dari kayu.',
-    variants: [], details: ['Motif batik mega mendung', 'Sendok saji kayu'],
-    certifications: [], msme: null,
-    display: 'gunungan-3'
-  }
-];
-
-return { PRODUCTS, SHOWROOM, GROUPS };
+return { PRODUCTS, SHOWROOM, GROUPS, YEARS, yearStats, setYearData };
 })();
 const { buildRoom, makeDisplay } = (() => {
 // Ruang Mendag — 3D room, furniture and display slots (meters, y-up).
@@ -1262,7 +1173,7 @@ function labelTexture(text, { bg = '#1d2d3d', fg = '#f2f2f3', w = 512, h = 96, s
   });
   t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t;
 }
-function brandPanelTexture(products) {
+function brandPanelTexture(products, title = 'Brand & Kategori') {
   const w = 1024, h = 2048;
   const t = canvasTex(w, h, (ctx) => {
     drawNavy(ctx, w, h);
@@ -1270,7 +1181,7 @@ function brandPanelTexture(products) {
     ctx.textAlign = 'left'; ctx.fillStyle = '#d7b46e'; ctx.font = '400 54px "Barlow Condensed", sans-serif'; ctx.letterSpacing = '14px';
     ctx.fillText('PILIHAN BUSAN', 100, 190);
     ctx.fillStyle = '#f3efe6'; ctx.font = '600 104px "Barlow Condensed", sans-serif'; ctx.letterSpacing = '2px';
-    ctx.fillText('Brand & Kategori', 100, 320);
+    ctx.fillText(title, 100, 320);
     ctx.fillStyle = '#d7b46e'; ctx.fillRect(100, 370, 120, 4);
     let y = 480;
     products.forEach((p, i) => {
@@ -1482,7 +1393,8 @@ function buildRoom({ products }) {
     gunungan: { label: 'Gunungan Console', pos: [CX, 1.6, 2.7], target: [CX, 1.1, HZ] },
     entrance: { label: 'Entrance & Console', pos: [0.8, 1.6, -2.1], target: [-HX, 1.15, -4.2] },
   };
-  return { root, slots, interactives, presets, intro: { pos: [CX, 2.45, HZ - 0.3], target: [CX, 1.55, -HZ] }, bounds: { x: HX - 0.3, zMin: -HZ + 0.3, zMax: HZ - 0.3, yMin: 0.35, yMax: 2.6 } };
+  const setBrandPanel = (list, title) => { const old = bpFace.material.map; bpFace.material.map = brandPanelTexture(list, title); bpFace.material.needsUpdate = true; old && old.dispose(); };
+  return { root, slots, interactives, presets, setBrandPanel, intro: { pos: [CX, 2.45, HZ - 0.3], target: [CX, 1.55, -HZ] }, bounds: { x: HX - 0.3, zMin: -HZ + 0.3, zMax: HZ - 0.3, yMin: 0.35, yMax: 2.6 } };
 }
 
 return { buildRoom, makeDisplay };
@@ -1495,9 +1407,10 @@ return { buildRoom, makeDisplay };
 /* ---------- helpers ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const byId = Object.fromEntries(PRODUCTS.map(p => [p.id, p]));
+const byId = {};
+const rebuildIndex = () => { Object.keys(byId).forEach(k => delete byId[k]); PRODUCTS.forEach(p => { byId[p.id] = p; }); };
 const ZONES = { featured: 'Featured · Meja Ruang Mendag', table: 'Meja Tengah Lounge', side: 'Meja Samping Emas', nest: 'Meja Nesting Lounge', gunungan: 'Konsol Gunungan', console: 'Konsol Pintu Masuk' };
-const zoneOf = p => ZONES[(p.display || '').split('-')[0]] || 'Showroom';
+const zoneOf = p => p.display ? (ZONES[p.display.split('-')[0]] || 'Ruang Mendag') : `Katalog PPPB ${state.year}`;
 const brandOf = p => p.brand || 'UMKM Pilihan BuSan';
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ICONS = {
@@ -1512,6 +1425,7 @@ const ICONS = {
   scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/>',
   move: '<polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/>',
   pointer: '<path d="M12.586 12.586 19 19"/><path d="M3.688 3.037a.497.497 0 0 0-.651.651l6.5 15.999a.501.501 0 0 0 .947-.062l1.569-6.083a2 2 0 0 1 1.448-1.479l6.124-1.579a.5.5 0 0 0 .063-.947z"/>',
+  swap: '<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>',
   zoom: '<circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/>',
 };
 const icon = (n, s = 18) => `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
@@ -1519,7 +1433,7 @@ const corners = '<i class="corner tl"></i><i class="corner tr"></i><i class="cor
 
 const params = new URLSearchParams(location.search);
 const WEBGL = (() => { if (params.has('2d')) return false; try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; } })();
-const state = { entered: false, active: null, hovered: null, panel: null, list: PRODUCTS.map(p => p.id) };
+const state = { entered: false, year: null, active: null, hovered: null, panel: null, list: [] };
 let three = null; // filled by init3D
 
 /* ---------- UI ---------- */
@@ -1534,10 +1448,11 @@ function openDrawer(mode = 'all', group = 'Semua') {
   const list = PRODUCTS.filter(p => (mode === 'featured' ? p.featured : true) && (group === 'Semua' || p.group === group));
   state.list = list.map(p => p.id);
   const title = mode === 'featured' ? 'Featured Products' : 'All Products';
-  const sub = mode === 'featured' ? 'Sorotan kurasi Pilihan BuSan' : `${PRODUCTS.length} produk UMKM di Ruang Mendag`;
+  const nBrand = new Set(PRODUCTS.map(p => p.brand)).size;
+  const sub = mode === 'featured' ? `${list.length} produk dipajang di Ruang Mendag · PPPB ${state.year}` : `${PRODUCTS.length} produk · ${nBrand} brand · PPPB ${state.year}`;
   drawer.innerHTML = `${corners}
     <div class="dr-head">
-      <div><h6 class="kicker">Pilihan BuSan</h6><h2>${title}</h2><p class="text-muted">${sub}</p></div>
+      <div><h6 class="kicker">Pilihan BuSan · PPPB ${state.year}</h6><h2>${title}</h2><p class="text-muted">${sub}</p></div>
       <button class="btn btn-icon" data-act="close-drawer" aria-label="Tutup">${icon('x')}</button>
     </div>
     ${mode === 'all' ? `<div class="seg dr-filter" role="radiogroup">${['Semua', ...GROUPS].map(g => `<label class="seg-opt"><input type="radio" name="grp" value="${esc(g)}" ${g === group ? 'checked' : ''}>${esc(g)}</label>`).join('')}</div>` : ''}
@@ -1545,7 +1460,7 @@ function openDrawer(mode = 'all', group = 'Semua') {
       <button class="pcard blueprint" data-open="${p.id}">${corners}
         <span class="pcard-img"><img loading="lazy" src="${p.texture}" alt="${esc(p.name)}"></span>
         <span class="pcard-body">
-          <span class="card-kicker">${esc(p.category)}</span>
+          <span class="card-kicker">${p.featured ? '★ Dipajang · ' : ''}${esc(p.category)}</span>
           <span class="card-title">${esc(p.name)}</span>
           <span class="card-meta">${esc(brandOf(p).split(' — ')[0])}</span>
         </span>
@@ -1556,10 +1471,16 @@ function openDrawer(mode = 'all', group = 'Semua') {
 }
 function closeDrawer() { drawer.classList.remove('open'); state.panel = null; if (!modal.classList.contains('open')) setNav('explore'); }
 
+const waNum = ph => { let d = String(ph || '').replace(/\D/g, ''); if (d.startsWith('0')) d = '62' + d.slice(1); else if (d.startsWith('8')) d = '62' + d; return d.length >= 9 ? d : null; };
+const href = u => /^https?:/i.test(u) ? u : 'https:/' + '/' + String(u).replace(/^\/+/, '');
 function detailHTML(p) {
   const i = state.list.indexOf(p.id), n = state.list.length;
-  const m = p.msme;
+  const m = p.msme || {};
   const row = (k, v) => `<dt>${k}</dt><dd>${v ? esc(v) : '<span class="text-muted">Akan dilengkapi</span>'}</dd>`;
+  const link = (k, v, url) => v ? `<dt>${k}</dt><dd><a href="${esc(url)}" target="_blank" rel="noopener">${esc(v)}</a></dd>` : '';
+  const wa = waNum(m.phone);
+  const waText = `Hello, I saw "${p.name}" by ${p.brand} in the Pilihan BuSan virtual showroom (Ruang Mendag) and would like more information about price, MOQ and shipping.`;
+  const ig = m.instagram ? String(m.instagram).replace(/^@/, '').trim() : null;
   return `${corners}
   <figure class="dt-media"><img src="${p.image}" alt="${esc(brandOf(p))} — ${esc(p.name)}"></figure>
   <div class="dt-info">
@@ -1570,19 +1491,25 @@ function detailHTML(p) {
     </div>
     <h6 class="kicker">${esc(brandOf(p))}</h6>
     <h2>${esc(p.name)}</h2>
-    <p class="dt-desc">${esc(p.description)}</p>
-    ${p.variants?.length ? `<section><h6>Varian</h6><ul class="specs">${p.variants.map(v => `<li>${esc(v)}</li>`).join('')}</ul></section>` : ''}
-    ${p.details?.length ? `<section><h6>Keunggulan</h6><ul class="specs">${p.details.map(d => `<li>${esc(d)}</li>`).join('')}</ul></section>` : ''}
+    ${p.description ? `<p class="dt-desc">${esc(p.description)}</p>` : ''}
+    ${p.specs?.length ? `<section><h6>Spesifikasi</h6><dl class="msme">${p.specs.map(([k, v]) => row(k, v)).join('')}</dl></section>` : ''}
+    ${p.exported?.length || p.targets?.length ? `<section><h6>Pasar ekspor</h6><dl class="msme">${p.exported?.length ? row('Sudah ekspor', p.exported.join(', ')) : ''}${p.targets?.length ? row('Target', p.targets.join(', ')) : ''}</dl></section>` : ''}
     <section><h6>Informasi UMKM</h6><dl class="msme">
-      ${row('Nama usaha', m?.name)}${row('Lokasi', m?.location)}${row('Sertifikasi', p.certifications?.length ? p.certifications.join(' · ') : null)}
+      ${row('Perusahaan', m.name)}${row('Angkatan', m.period)}${row('Alamat', m.location)}
+      ${link('WhatsApp', m.phone, wa ? 'https:/' + '/wa.me/' + wa + '?text=' + encodeURIComponent(waText) : 'tel:' + m.phone)}
+      ${link('Email', m.email, 'mailto:' + m.email)}
+      ${link('Instagram', m.instagram, 'https:/' + '/instagram.com/' + ig)}
+      ${link('Website', m.web, m.web ? href(m.web) : '')}
     </dl></section>
+    <p class="text-muted dt-note">Sumber: katalog resmi PPPB. Harga FOB dan MOQ dapat berubah — mohon konfirmasi langsung ke perusahaan.</p>
     <div class="dt-actions">
       <div class="dt-pager">
         <button class="btn btn-icon btn-secondary" data-act="prev" aria-label="Sebelumnya">${icon('left')}</button>
         <span>${String(i + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}</span>
         <button class="btn btn-icon btn-secondary" data-act="next" aria-label="Berikutnya">${icon('right')}</button>
       </div>
-      ${WEBGL ? `<button class="btn btn-primary blueprint" data-act="view-in-room">${corners}${icon('scan', 16)}Lihat di ruangan</button>` : ''}
+      ${wa ? `<a class="btn btn-primary blueprint" href="https:/${'/'}wa.me/${wa}?text=${encodeURIComponent(waText)}" target="_blank" rel="noopener">${corners}WhatsApp</a>` : ''}
+      ${WEBGL && p.display ? `<button class="btn btn-secondary blueprint" data-act="view-in-room">${corners}${icon('scan', 16)}Lihat di ruangan</button>` : ''}
     </div>
   </div>`;
 }
@@ -1616,7 +1543,7 @@ function openAbout() {
       <h2>${esc(SHOWROOM.program)}</h2>
       ${SHOWROOM.about.map(t => `<p class="dt-desc">${esc(t)}</p>`).join('')}
       <div class="about-strip">${SHOWROOM.gallery.map(src => `<span class="blueprint">${corners}<img src="${src}" alt=""></span>`).join('')}</div>
-      <dl class="msme about-facts"><dt>Produk</dt><dd>${PRODUCTS.length} produk</dd><dt>Brand</dt><dd>${new Set(PRODUCTS.filter(p => p.brand).map(p => p.brand)).size} brand terkonfirmasi</dd><dt>Kategori</dt><dd>${GROUPS.join(' · ')}</dd></dl>
+      <dl class="msme about-facts"><dt>Produk</dt><dd>${PRODUCTS.length} produk</dd><dt>Angkatan</dt><dd>PPPB ${state.year}</dd><dt>Brand</dt><dd>${new Set(PRODUCTS.map(p => p.brand)).size} brand</dd><dt>Dipajang</dt><dd>${PRODUCTS.filter(p => p.featured).length} produk di ruangan</dd><dt>Kategori</dt><dd>${GROUPS.join(' · ')}</dd></dl>
       <div class="dt-actions"><button class="btn btn-primary blueprint" data-act="explore">${corners}${icon('compass', 16)}Explore the Room</button></div>
     </div>`, 'is-about');
 }
@@ -1636,6 +1563,7 @@ document.addEventListener('click', e => {
     if (!state.entered) return;
     if (k === 'explore') return explore();
     if (k === 'about') return openAbout();
+    if (k === 'year') return switchYear(state.year === '2025' ? '2026' : '2025');
     return state.panel === k ? closeDrawer() : openDrawer(k);
   }
   const a = t.dataset.act;
@@ -1660,15 +1588,30 @@ function showTip(html, x, y) { tip.innerHTML = html; tip.style.transform = `tran
 function hideTip() { tip.classList.remove('on'); }
 
 /* ---------- intro ---------- */
-const enterBtn = $('#enter'), bar = $('#load-bar'), loadTxt = $('#load-txt');
+const yearBtns = $$('.year-btn'), bar = $('#load-bar'), loadTxt = $('#load-txt');
+$$('[data-stat]').forEach(el => { const st = yearStats(el.dataset.stat); el.textContent = `${st.brands} brand · ${st.products} produk`; });
 function setProgress(k, txt) { bar.style.transform = `scaleX(${k})`; loadTxt.textContent = txt || `Memuat ruangan · ${Math.round(k * 100)}%`; }
-function ready(txt) { setProgress(1, txt); enterBtn.disabled = false; $('#intro').classList.add('ready'); }
-enterBtn.addEventListener('click', () => {
+function ready(txt) { setProgress(1, txt); yearBtns.forEach(b => b.disabled = false); $('#intro').classList.add('ready'); }
+async function applyYear(y) {
+  state.year = y; setYearData(y); rebuildIndex(); state.list = PRODUCTS.map(p => p.id);
+  $('#yr-label').textContent = y;
+  $('.bm-sub').textContent = `Pilihan BuSan · PPPB ${y}`;
+  if (three) await three.setYear(y);
+}
+async function switchYear(y) {
+  if (!state.entered || y === state.year) return;
+  closeModal(); closeDrawer();
+  await applyYear(y);
+  three ? (three.preset('overview'), setPresetRadio('overview')) : openDrawer('all');
+}
+yearBtns.forEach(btn => btn.addEventListener('click', async () => {
+  yearBtns.forEach(b => b.disabled = true); setProgress(1, 'Menata produk…');
+  await applyYear(btn.dataset.year);
   state.entered = true;
   $('#intro').classList.add('leaving'); document.body.classList.add('entered');
   setTimeout(() => $('#intro').remove(), 1400);
   if (three) three.enter(); else openDrawer('all');
-});
+}));
 
 /* ---------- 3D ---------- */
 async function init3D() {
@@ -1697,27 +1640,37 @@ async function init3D() {
   scene.environment = pm.fromScene(es, 0.04).texture; scene.environmentIntensity = 0.75;
 
   setProgress(0.05, 'Membangun ruangan…');
-  const room = buildRoom({ products: PRODUCTS });
+  const room = buildRoom({ products: [] });
   scene.add(room.root);
 
   // textures
-  const manager = new THREE.LoadingManager();
-  const loader = new THREE.TextureLoader(manager);
+  const loader = new THREE.TextureLoader();
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
-  const total = PRODUCTS.length + 1; let done = 0;
-  const load = url => new Promise(res => loader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso; done++; setProgress(0.1 + 0.85 * done / total); res(t); }, undefined, () => { done++; res(null); }));
-  const texs = await Promise.all([...PRODUCTS.map(p => load(p.texture)), load(SHOWROOM.aboutImage)]);
-
+  const load = url => new Promise(res => loader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso; res(t); }, undefined, () => res(null)));
+  setProgress(0.6, 'Memuat ruangan…');
   const displays = {}, dispList = [];
-  PRODUCTS.forEach((p, i) => {
-    const anchor = room.slots[p.display], tex = texs[i];
-    if (!anchor || !tex) { console.warn('No display slot/texture for', p.id); return; }
-    const label = p.display === 'featured' ? 'FEATURED · PILIHAN BUSAN' : brandOf(p).split(' — ')[0].toUpperCase();
-    const d = makeDisplay(tex, anchor, { label });
-    d.userData.pid = p.id; displays[p.id] = d; dispList.push(d);
-  });
-  const aboutTex = texs[texs.length - 1];
+  const aboutTex = await load(SHOWROOM.aboutImage);
   if (aboutTex) { const d = makeDisplay(aboutTex, room.slots.about, { style: 'wall' }); d.userData.action = 'about'; d.userData.label = 'Ruang Mendag'; d.userData.sub = 'About Pilihan BuSan'; dispList.push(d); }
+  let yearToken = 0;
+  async function setYearDisplays(year) {
+    const my = ++yearToken;
+    Object.keys(displays).forEach(id => {
+      const d = displays[id]; d.parent && d.parent.remove(d);
+      d.traverse(o => { if (o.isMesh) { o.geometry.dispose(); if (o.material.map && o.material.name === 'product_photo') o.material.map.dispose(); } });
+      const k = dispList.indexOf(d); if (k >= 0) dispList.splice(k, 1); delete displays[id];
+    });
+    const shown = PRODUCTS.filter(p => p.display && room.slots[p.display]);
+    room.setBrandPanel(shown, 'PPPB ' + year);
+    const texs = await Promise.all(shown.map(p => load(p.texture)));
+    if (my !== yearToken) { texs.forEach(t => t && t.dispose()); return; }
+    shown.forEach((p, i) => {
+      const anchor = room.slots[p.display], tex = texs[i];
+      if (!tex) { console.warn('No texture for', p.id); return; }
+      const label = p.display === 'featured' ? `FEATURED · PPPB ${year}` : brandOf(p).toUpperCase();
+      const d = makeDisplay(tex, anchor, { label });
+      d.userData.pid = p.id; displays[p.id] = d; dispList.push(d);
+    });
+  }
   room.interactives.forEach(it => Object.assign(it.mesh.userData, { action: it.action, label: it.label, sub: it.sub }));
   room.root.traverse(o => { if (o.isMesh && o.material.transparent) o.raycast = () => {}; });
 
@@ -1826,6 +1779,7 @@ async function init3D() {
       setTimeout(() => $('#hint')?.classList.add('gone'), 14000);
     },
     preset(k) { const p = room.presets[k]; if (p) flyTo(p.pos, p.target, 1.5); },
+    setYear: setYearDisplays,
     focus(id, done, quick) { if (!displays[id]) return done && done(); const v = productView(id); flyTo(v.pos, v.target, quick ? 0.9 : 1.15, done); },
   };
   window.__showroom = { camera, controls, scene, renderer, flyTo, three, snap() { renderer.render(scene, camera); let im = document.getElementById('__snap'); if (!im) { im = document.createElement('img'); im.id = '__snap'; im.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;z-index:1;pointer-events:none'; document.body.appendChild(im); } im.src = canvas.toDataURL('image/jpeg', 0.9); }, unsnap() { document.getElementById('__snap')?.remove(); },
@@ -1836,7 +1790,7 @@ async function init3D() {
 if (WEBGL) {
   init3D().catch(err => { console.error(err); document.body.classList.add('no-webgl'); ready('Mode galeri 2D'); if (params.has('debug')) $('#load-txt').textContent = String(err && err.stack || err).slice(0, 300); });
 } else {
-  document.body.classList.add('no-webgl'); $('#enter span').textContent = 'ENTER GALLERY'; ready('Mode galeri 2D');
+  document.body.classList.add('no-webgl'); ready('Mode galeri 2D');
 }
 
 }

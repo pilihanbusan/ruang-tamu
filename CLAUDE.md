@@ -10,7 +10,10 @@ Two people maintain it, each through their own Claude account. Every change must
 
 ## Files (since Nov 2026: "Ruang Mendag" design)
 
-- `index.html`: the "Ruang Mendag" 3D showroom, exported from a Claude Design artifact and unbundled. The scene, the product list (13 products) and the UI are in its `<script type="module">`. It uses three.js 0.184 as ES modules through an import map that points to `vendor/three/` (no CDN), fonts in `assets/fonts/` and images in `assets/img/`. To change the design, edit it in the design artifact, export a standalone HTML again and unbundle it the same way.
+- Division of work: the **room design** (Ruang Mendag) belongs to Adluyana; the **product content** comes from the PPPB catalogue (`data/catalog.js`) maintained by the other owner.
+- `index.html`: the "Ruang Mendag" 3D showroom, exported from a Claude Design artifact and unbundled. Before entering, the visitor picks **PPPB 2025** or **PPPB 2026**; the top bar has a button to switch year. Products are built from `data/catalog.js` for that year (`productsFor()`); "All Products" lists every product of the year, "Featured" lists the displayed ones.
+- `data/pajangan.js`: which catalogue product stands on each of the 13 display slots (`featured`, `table-1a/1b/2a/2b`, `side-1`, `nest-a/b`, `gunungan-1..3`, `console-1/2`), per year. Edit this file to change what is displayed in the room.
+- `index.html` (continued): the scene and UI are in its `<script type="module">`. It uses three.js 0.184 as ES modules through an import map that points to `vendor/three/` (no CDN), fonts in `assets/fonts/` and images in `assets/img/`. To change the design, edit it in the design artifact, export a standalone HTML again and unbundle it the same way.
 - `katalog.html`: the previous showroom built around the full PPPB catalogue (105 brands / 204 products). It still uses three.js r128 from cdnjs and the files described below.
 
 The notes below describe `katalog.html` (formerly `index.html`).
