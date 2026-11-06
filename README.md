@@ -1,39 +1,34 @@
-# Indonesian Export Showcase — Virtual Living Room
+# Pilihan BuSan — Virtual Showroom
 
-A first-person virtual showroom. Buyers walk around a living room and look at Indonesian export products. It runs as a single static page, hosted on GitHub Pages.
+A first-person virtual showroom for the **Product Placement Pilihan BuSan (PPPB) 2025–2026** brands: 105 brands and 204 products. Buyers walk around an Indonesian living room, hover over or tap any product, and contact the makers directly by WhatsApp, email or Instagram. It runs as a static page on GitHub Pages.
+
+Live site: https://pilihanbusan.github.io/ruang-tamu
+Link to a single brand: `https://pilihanbusan.github.io/ruang-tamu/#<brand-id>`, for example `#2026-halba`
 
 ## Folder structure
 
 | Path | What it holds | Who edits it |
 |---|---|---|
-| `data/products.js` | Product names, origin, MOQ, lead time, HS code, certification, and EN/ID descriptions | The content team |
-| `photos/` | Product photos, one file per product | The content team |
+| `data/catalog.js` | All brands and products: contacts, descriptions, FOB, MOQ, loadability, export markets | The content team |
+| `photos/catalog/` | Product photos (`<product-id>.jpg`) | The content team |
+| `photos/catalog/thumb/` | Tiles shown on the 3D shelves (`<brand-id>.jpg`) | Regenerate when a brand changes |
 | `index.html` | The 3D room, controls and UI | Only for layout or feature changes |
 
-## Updating a product photo
+## Fixing data (price, phone number, description)
 
-1. Name the photo after the product `id`, for example `coffee.jpg`.
-2. Upload it into `photos/`. On GitHub, open the folder, then choose **Add file → Upload files**.
-3. The live site picks up the new photo about a minute after the commit.
+1. Open `data/catalog.js` on GitHub and click the pencil icon.
+2. Press Ctrl+F and search for the brand name.
+3. Edit the text between the quotes, then click **Commit changes**.
 
-Product ids: `ikat`, `rattan`, `teak`, `ceramics`, `batik`, `basket`, `coffee`, `chocolate`, `spice`.
+The live site updates about a minute after the commit.
 
-Photos of batik, ikat and the coffee, chocolate and spice packs also appear on the 3D objects. They are cropped to fit, so keep the main subject centred. Photos up to about 1,500 px on the long side load quickly.
+## Replacing a product photo
 
-## Updating product data
-
-Open `data/products.js` and click the pencil icon. Edit the text between the quotes, then commit the change.
-
-- Do not change the `id` values, because they link each entry to an object in the room.
-- `den` holds the English description and `did` holds the Indonesian one.
-- All current data is **sample data** and must be replaced with verified exporter details.
+Upload a new file with the same name, for example `2026-halba-1.jpg`, into `photos/catalog/`.
 
 ## Working together
 
-- Keep commits small, one product or one feature per commit, so changes are easy to review and revert.
+- Keep commits small, one brand or one feature per commit.
 - For larger changes, create a branch and open a pull request.
 - Preview locally with `python3 -m http.server`, then open `http://localhost:8000`.
-
-## Turning on GitHub Pages
-
-Go to **Settings → Pages → Build and deployment**. Set the source to `Deploy from a branch`, choose the branch `main` and the folder `/ (root)`.
+- See `CLAUDE.md` for the technical guide.

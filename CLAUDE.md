@@ -11,50 +11,40 @@ Two people maintain it, each through their own Claude account. Every change must
 ## Files
 
 - `index.html`: the whole app, meaning the CSS, the 3D scene, the controls and the UI. The sections are marked with comments:
-  - `/* ---- DATA ---- */`: UI strings in two languages (the `T` object, keys `en` and `id`).
-  - `/* ---- PROCEDURAL TEXTURES ---- */`: canvas textures (floor, rattan weave, teak, batik, ikat, rug, packaging, signs, markers).
-  - `/* ---- STATE ---- */`: `BOUNDS` (walkable area of the room), `EYE` (camera height of 1.6 m) and `OBST` (collision circles).
-  - `/* ---- SCENE ---- */ build()`: lights, materials (`wallM`, `accentM`, and so on), the room, then each prop under a `// ---- N. Name ----` comment.
-  - `/* ---- CAMERA / MOVE ---- */`, `/* ---- UI ---- */` and `/* ---- LOOP ---- */`: navigation, product panel, catalogue and render loop.
-- `data/products.js`: product content (`window.CATS`, `window.PRODUCTS`). Keep content out of `index.html`.
-- `data/catalog.js`: the real PPPB catalog (`window.CATALOG`) — 105 brands / 204 products from the 2025 (periods 1–3) and 2026 PDF catalogs, with contacts, FOB, MOQ, loadability and (for most 2026 brands) export markets. Photos are in `photos/catalog/<product-id>.jpg`. This is the source of truth for the showroom going forward; `data/products.js` is the old 9-product demo.
-- `photos/<id>.jpg`: optional product photos. If a photo is missing, the product falls back to a placeholder.
+  - `/* ---- DATA ---- */`: section labels and UI strings in two languages (the `T` object, keys `en` and `id`).
+  - `/* ---- HELPERS ---- */`: canvas textures (floor, rattan weave, teak, batik, ikat, rug, signs).
+  - `/* ---- STATE ---- */`: `BOUNDS` (the room is 18 × 13 m), `EYE` (camera height of 1.6 m), `OBST` (collision circles) and `RECTS` (collision boxes for the shelving units).
+  - `/* ---- SCENE ---- */ build()`: lights, room, the decorative living set, the shelving units, the brand tiles and the guided-tour `ZONES`.
+  - `/* ---- CAMERA / MOVE ---- */`, `/* ---- UI ---- */` and `/* ---- LOOP ---- */`: navigation, the brand panel, the searchable catalogue, the hover tooltip and the render loop.
+- `data/catalog.js`: the real PPPB catalogue (`window.CATALOG`). It holds 105 brands and 204 products from the 2025 (periods 1–3) and 2026 PDF catalogues. Each brand has `id`, `period`, `section` (`craft` or `food`), contacts, and `exportedTo`/`targetMarkets` for most 2026 brands. Each product has its name, description, specifications, FOB, MOQ, loadability and `photo`. **All content lives here, so edit this file to fix a price or a phone number.**
+- `photos/catalog/<product-id>.jpg`: product photos, which the panel shows.
+- `photos/catalog/thumb/<brand-id>.jpg`: 256 × 296 tiles shown on the 3D shelves (photo plus a brand name strip). If you change a brand name or its first photo, regenerate its tile with Python/PIL in the same style.
 
 ## Scene conventions
 
-- Units are metres. The y axis points up. The back wall is at z = -5 and the entrance is at z = +4.5. The left wall is at x = -6 and the right wall at x = +6. The ceiling is 3.2 m high.
-- Every product has three parts:
-  1. A `THREE.Group` that is tagged with `tag(group, '<id>')`. The tag is what makes it clickable.
-  2. An entry in `prodById[id]` with these fields:
-     - `marker:[x,y,z]` places the numbered marker.
-     - `view:[camX, camZ, targetX, targetY, targetZ]` sets where the guided tour stands and what it looks at.
-     - `surface:{mat, aspect}` is optional. Set it when the photo should also appear on the 3D object.
-  3. An entry with the same `id` in `data/products.js`. The order of that array sets the marker numbers and the tour order.
-- Every solid object that people should not walk through needs a collision circle: add `{x, z, r}` to `OBST`.
-- Floor meshes need `userData.floor = true`, because that is what makes click-to-walk work on them.
-- Keep the room compatible with mobile phones:
-  - Shadows are cast only by furniture.
-  - Keep geometry simple. Avoid large imported models unless they are compressed `.glb` files under about 3 MB in total.
-
-## Adding a product
-
-1. Add the prop and its tag in `build()`, along with `prodById` and `OBST` entries.
-2. Add the data entry in `data/products.js`.
-3. Optionally add `photos/<id>.jpg`.
-4. Check that the marker is visible and that the tour view frames the object. Remember that the info panel covers the right 410 px on desktop and the bottom ~62% of the screen on mobile.
+- Units are metres and the y axis points up. The room spans x −9…9 and z −7…6, with the entrance at z = +6. The ceiling is 3.2 m high.
+- Brands sit on cube shelving units. Each unit is 4 × 3 cubes of 0.5 m.
+  - Craft & Fashion: the island front (z ≈ 3.75, facing the entrance), then the left wall (4 units).
+  - Food & Beverage: the right wall (4 units), then the island back.
+  - Within each section, 2026 brands come first, then 2025 P1–P3.
+  - Total capacity is 60 + 60 slots. If you add brands beyond that, add a unit to `units` in `build()`.
+- Each brand tile is a plane with `userData.bid = brand.id`. That property is what makes it hoverable and clickable. `byId[id]` stores the tile, its material and the camera `view`.
+- Deep links work: `…/ruang-tamu/#<brand-id>` opens the showroom straight at that brand.
+- Solid objects need a collision circle in `OBST` or a box in `RECTS`. Floor meshes need `userData.floor = true` so that click-to-walk works on them.
+- Keep it light for phones. Shelf tiles use 256 px thumbnails, and full photos load only inside the panel.
 
 ## Hard rules
 
 - All UI text must be bilingual. Add every new string to both `T.en` and `T.id`. Buyers see English by default.
-- The disclaimer "Sample data" must stay until the product data is verified.
-- Do not use logos or brand names of real companies or government institutions unless the repo owners say so explicitly.
+- Product content comes from the official PPPB catalogue. Keep the source note in the panel, which tells buyers to confirm prices and MOQ with the company.
+- The repo owners approved showing the PPPB programme name and the real brands, contacts (including WhatsApp), prices, MOQ and export markets. Do not add other logos or government insignia unless the owners say so explicitly.
 - Do not add analytics, trackers or external requests beyond cdnjs and Google Fonts.
 
 ## Testing before you push
 
 Run `python3 -m http.server 8000` in the repo root and open http://localhost:8000. Check all of the following:
 
-- The welcome screen, the guided tour from 1 to 9, the catalogue and the language toggle.
+- The welcome screen, the zone tour (8 zones), the catalogue search and filters, a brand panel (WhatsApp, email and Instagram links) and the language toggle.
 - Desktop controls: drag to look, WASD and click-to-walk.
 - The layout at a mobile width of about 390 px, including the joystick and the bottom-sheet panel.
 - The browser console shows no errors.
