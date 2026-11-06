@@ -57,6 +57,7 @@ a{color:inherit}
 /* panel */
 #panel{position:fixed;z-index:15;background:var(--cream);box-shadow:-10px 0 40px rgba(0,0,0,.28);overflow:auto;transition:transform .35s cubic-bezier(.2,.8,.2,1);overscroll-behavior:contain}
 @media (min-width:760px){#panel{top:0;right:0;bottom:0;width:440px;transform:translateX(105%)}#panel.open{transform:none}}
+@media (min-width:760px){body.pop #topbar{right:452px;transition:right .35s}}
 @media (max-width:759px){#panel{left:0;right:0;bottom:0;max-height:66vh;border-radius:20px 20px 0 0;transform:translateY(105%)}#panel.open{transform:none}}
 @media (max-width:520px){.brand b{font-size:12.5px}.brand span{display:none}.tbtn{padding:9px 10px}#zonebar .zl{min-width:130px}}
 .ph{position:sticky;top:0;z-index:2;background:var(--cream);padding:16px 18px 12px;border-bottom:1px solid var(--line)}
@@ -433,8 +434,8 @@ function clickAt(x,y){const r=pick(x,y);if(!r)return;if(r.bid)goBrand(r.bid);els
 const panel=document.getElementById('panel');
 function panelOpenMobile(){return panel.classList.contains('open')&&innerWidth<760;}
 function setHighlight(id,on){const d=byId[id];if(!d)return;d.mat.emissiveIntensity=on?.75:.32;d.mesh.scale.setScalar(on?1.06:1);}
-function openPanel(id){if(current&&current!==id)setHighlight(current,false);current=id;setHighlight(id,true);renderPanel();panel.classList.add('open');panel.scrollTop=0;document.getElementById('joyhint').style.display='none';}
-function closePanel(){panel.classList.remove('open');if(current)setHighlight(current,false);current=null;}
+function openPanel(id){if(current&&current!==id)setHighlight(current,false);current=id;setHighlight(id,true);renderPanel();panel.classList.add('open');document.body.classList.add('pop');panel.scrollTop=0;document.getElementById('joyhint').style.display='none';}
+function closePanel(){panel.classList.remove('open');document.body.classList.remove('pop');if(current)setHighlight(current,false);current=null;}
 function specRows(p){return ['dimension','material','finishing','weight','cert'].filter(k=>p[k]).map(k=>`<tr><td>${t(k)}</td><td>${esc(p[k])}</td></tr>`).join('');}
 function renderPanel(){if(!current)return;const b=byId[current].brand,sec=SECTIONS[b.section]||SECTIONS.craft;
  const wa=waNumber(b.phone),igs=igHandle(b.instagram);const waMsg=encodeURIComponent(t('waText').replace('{b}',b.brand));
@@ -467,7 +468,11 @@ function renderPanel(){if(!current)return;const b=byId[current].brand,sec=SECTIO
  const v=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
  const inquiry=()=>`Subject: Inquiry — ${b.brand}\n\nDear ${b.company},\n\nI found your products in the Pilihan BuSan virtual showroom.\nProduct & quantity: ${v('iQty')||'-'}\n\nName: ${v('iName')||'-'}\nCompany: ${v('iCo')||'-'}\nCountry: ${v('iCountry')||'-'}\n\n${v('iMsg')||'Please send your best FOB price, MOQ and lead time.'}`;
  document.getElementById('iCopy').onclick=()=>{const txt=inquiry(),ok=document.getElementById('iOk');const fb=()=>{const ta=document.getElementById('iMsg');ta.value=txt;ta.style.height='190px';ta.select();ok.textContent=t('inqFail');};try{navigator.clipboard.writeText(txt).then(()=>{ok.textContent=t('inqOk');},fb);}catch(err){fb();}};
- const iw=document.getElementById('iWa');if(iw)iw.onclick=()=>{window.open(`https://wa.me/${wa}?text=${encodeURIComponent(inquiry())}`,'_blank','noopener');};
+ const waChat=()=>{const who=[v('iName'),v('iCo')&&(LANG==='id'?'dari ':'from ')+v('iCo'),v('iCountry')&&'('+v('iCountry')+')'].filter(Boolean).join(' ');
+  const L=LANG==='id'?[who?`Halo ${b.brand}, saya ${who}. Saya melihat produk Anda di showroom virtual Pilihan BuSan.`:`Halo ${b.brand}, saya melihat produk Anda di showroom virtual Pilihan BuSan.`,v('iQty')?`Saya tertarik dengan: ${v('iQty')}.`:'',v('iMsg')||'Boleh minta info harga FOB, MOQ, dan waktu produksinya? Terima kasih.']
+   :[`Hi ${b.brand}, I'm${who?' '+who:' interested in your products'}${who?' and I':' —'} found you in the Pilihan BuSan virtual showroom.`,v('iQty')?`I'm interested in: ${v('iQty')}.`:'',v('iMsg')||'Could you share your FOB price, MOQ and lead time? Thank you!'];
+  return L.filter(Boolean).join('\n\n');};
+ const iw=document.getElementById('iWa');if(iw)iw.onclick=()=>{window.open(`https://wa.me/${wa}?text=${encodeURIComponent(waChat())}`,'_blank','noopener');};
 }
 
 // catalogue
