@@ -4,7 +4,7 @@ Read this before changing anything in this repo. It explains how the project is 
 
 ## What this is
 
-A first-person virtual exhibition: an Indonesian living room, styled like an IKEA showroom, that international buyers walk through to view local export products. It is a static site on GitHub Pages at https://pilihanbusan.github.io/ruang-tamu. There is no build step and no bundler. The only dependency is three.js r128, loaded from cdnjs as the global `THREE`, so do not use ES-module imports.
+A first-person virtual exhibition: an Indonesian living room, styled like an IKEA showroom, that international buyers walk through to view local export products. It is a static site on GitHub Pages at https://pilihanbusan.github.io/ruang-tamu. There is no build step and no bundler. `index.html` uses three.js 0.184 as ES modules from `vendor/three/` (through an import map). `katalog.html` still uses three.js r128 from cdnjs as a global `THREE`.
 
 Two people maintain it, each through their own Claude account. Every change must leave the site working for buyers.
 
@@ -12,6 +12,16 @@ Two people maintain it, each through their own Claude account. Every change must
 
 - Division of work: the **room design** (Ruang Mendag) belongs to Adluyana; the **product content** comes from the PPPB catalogue (`data/catalog.js`) maintained by the other owner.
 - `index.html`: the "Ruang Mendag" 3D showroom, exported from a Claude Design artifact and unbundled. Before entering, the visitor picks **PPPB 2025** or **PPPB 2026**; the top bar has a button to switch year. Products are built from `data/catalog.js` for that year (`productsFor()`); "All Products" lists every product of the year, "Featured" lists the displayed ones.
+- `index.html` — movement and wall: the visitor **walks in first person**, which replaces OrbitControls.
+  - Eye height is 1.6 m.
+  - Desktop: drag to look, WASD or the arrow keys to walk (Shift to run), Q and E to turn, the mouse wheel to step, and a click on the floor or rugs to walk there.
+  - Touch: a joystick on the left thumb.
+  - Colliders are built automatically from the furniture footprints (`RECTS`). The dock presets fly the walker to fixed viewpoints.
+  - **Every brand of the chosen year** also hangs as a framed tile on the wall panels (`setYearTiles`, `makeDisplay` with `style: 'tile'`, images from `photos/catalog/thumb/`):
+    - Craft & Fashion: the east feature wall, on the grey and dark panels.
+    - Food & Beverage: the west wall.
+    - The ikat panels, the gold-leaf panel and the brand information panel stay clear.
+  - Clicking a tile opens the detail of the brand's first product. Deep links `#<product-id>` and `#<brand-id>` work after the visitor enters.
 - `data/pajangan.js`: which catalogue product stands on each of the 13 display slots (`featured`, `table-1a/1b/2a/2b`, `side-1`, `nest-a/b`, `gunungan-1..3`, `console-1/2`), per year. Edit this file to change what is displayed in the room.
 - `index.html` (continued): the scene and UI are in its `<script type="module">`. It uses three.js 0.184 as ES modules through an import map that points to `vendor/three/` (no CDN), fonts in `assets/fonts/` and images in `assets/img/`. To change the design, edit it in the design artifact, export a standalone HTML again and unbundle it the same way.
 - `katalog.html`: the previous showroom built around the full PPPB catalogue (105 brands / 204 products). It still uses three.js r128 from cdnjs and the files described below.
