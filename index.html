@@ -536,6 +536,13 @@ textarea.input { min-height: 90px; resize: vertical; }
   .yb-s { font-family: var(--font-body); font-size: 11px; font-weight: 400; letter-spacing: .06em; opacity: .8; }
   .year-btn[disabled] { opacity: .55; }
   .nb-year b { font-weight: 600; white-space: nowrap; }
+
+  /* first-person controls */
+  #joy { position: fixed; z-index: 12; width: 116px; height: 116px; border-radius: 50%; background: color-mix(in srgb, var(--color-bg) 22%, transparent); border: 1px solid color-mix(in srgb, var(--color-bg) 70%, transparent); display: none; pointer-events: none; transform: translate(-50%, -50%); }
+  #knob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: color-mix(in srgb, var(--color-bg) 92%, transparent); box-shadow: var(--shadow-md); }
+  #joyhint { position: fixed; z-index: 11; left: 20px; bottom: 84px; width: 84px; height: 84px; border-radius: 50%; border: 1px dashed color-mix(in srgb, var(--color-bg) 80%, transparent); color: var(--color-bg); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; display: none; align-items: center; justify-content: center; text-align: center; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  body.entered.touch #joyhint.on { display: flex; }
+  .h-touch { display: none !important; } body.touch .h-touch { display: inline-flex !important; } body.touch .h-desk { display: none !important; }
   @media (max-width: 980px) { .nb-year .yr-pre { display: none; } .nb-year #yr-label { display: inline; } }
   .dt-note { font-size: 12px; margin: var(--space-3) 0 0; }
   .dt-actions .btn { text-decoration: none; }
@@ -612,12 +619,15 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 <div id="hint" class="paper blueprint">
   <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-  <span data-icon="move" data-size="15">Geser untuk melihat</span>
-  <span data-icon="zoom" data-size="15">Scroll / pinch untuk zoom</span>
-  <span data-icon="pointer" data-size="15">Klik produk</span>
+  <span data-icon="move" data-size="15" class="h-desk">Seret untuk melihat · WASD untuk berjalan</span>
+  <span data-icon="move" data-size="15" class="h-touch">Seret untuk melihat · joystick untuk berjalan</span>
+  <span data-icon="compass" data-size="15">Klik lantai untuk pindah</span>
+  <span data-icon="pointer" data-size="15">Klik produk untuk detail</span>
 </div>
 
 <div id="tip" role="status"></div>
+<div id="joy" aria-hidden="true"><div id="knob"></div></div>
+<div id="joyhint" aria-hidden="true">Geser<br>di sini</div>
 <aside id="drawer" class="paper blueprint" aria-label="Daftar produk"></aside>
 <div id="modal"><div class="dt blueprint" role="dialog" aria-modal="true"></div></div>
 
@@ -649,7 +659,6 @@ textarea.input { min-height: 90px; resize: vertical; }
 <script src="data/pajangan.js"></script>
 <script type="module">
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 {
 const { PRODUCTS, SHOWROOM, GROUPS, YEARS, yearStats, setYearData } = (() => {
 // Showroom text. Products come from data/catalog.js (per year) — see productsFor() below.
@@ -1205,7 +1214,7 @@ function makeDisplay(tex, anchor, { label = null, style = 'stand' } = {}) {
   const g = new THREE.Group(); g.name = 'display'; const panel = new THREE.Group(); panel.name = 'display_panel'; g.add(panel);
   const photoMat = new THREE.MeshBasicMaterial({ name: 'product_photo', map: tex, toneMapped: false, color: new THREE.Color(0.86, 0.86, 0.86) });
   const frameMat = MAT.frame.clone(); frameMat.emissive = new THREE.Color('#e3bb6c'); frameMat.emissiveIntensity = 0;
-  const fw = style === 'wall' ? 0.05 : 0.012, fd = style === 'wall' ? 0.05 : 0.022;
+  const fw = style === 'wall' ? 0.05 : style === 'tile' ? 0.014 : 0.012, fd = style === 'wall' ? 0.05 : 0.022;
   let cy = 0;
   if (style === 'stand') {
     const bw = Math.max(w + 0.08, 0.26);
@@ -1217,6 +1226,12 @@ function makeDisplay(tex, anchor, { label = null, style = 'stand' } = {}) {
       const pl = mesh(new THREE.PlaneGeometry(lw, lw * 96 / 512), new THREE.MeshBasicMaterial({ map: lt, toneMapped: false, color: new THREE.Color(0.85, 0.85, 0.85) }), 'display_label', g, 0, 0.0335, 0.045);
       pl.rotation.x = -Math.PI / 2 + 0.35;
     }
+  }
+  if (style === 'tile') {   // light-weight catalogue tile: one brass frame block + the photo (2 draw calls)
+    const fr = box(panel, 'tile_frame', w + 2 * fw, h + 2 * fw, fd, frameMat, 0, 0, -fd / 2);
+    const ph = mesh(new THREE.PlaneGeometry(w, h), photoMat, 'product_photo', panel, 0, 0, 0.002);
+    g.userData = { panel, photo: ph, photoMat, frameMat, size: [w, h], hover: 0, style, hits: [ph, fr] };
+    anchor.add(g); return g;
   }
   const backer = box(panel, 'display_backer', w + 2 * fw, h + 2 * fw, fd * 0.6, MAT.paper, 0, cy, -fd * 0.3);
   const bars = [
@@ -1279,9 +1294,9 @@ function buildRoom({ products }) {
   box(root, 'ac_grille_e', 0.06, 0.01, 2.4, MAT.leg, HX - sl + 0.05, sb - 0.004, 1.6);
 
   // wall panel runs
-  const Hp = sb - 0.1;
+  const Hp = sb - 0.1, wallPanels = [];
   const panel = (side, zc, w, type) => {
-    const g = new THREE.Group(); g.name = 'panel_' + type; g.position.set(side === 'E' ? HX : -HX, 0, zc); g.rotation.y = side === 'E' ? -Math.PI / 2 : Math.PI / 2; root.add(g);
+    const g = new THREE.Group(); wallPanels.push({ side, zc, w, type, g }); g.name = 'panel_' + type; g.position.set(side === 'E' ? HX : -HX, 0, zc); g.rotation.y = side === 'E' ? -Math.PI / 2 : Math.PI / 2; root.add(g);
     const m = type === 'slat' ? slatMat(w) : { grey: MAT.panelGrey, dark: MAT.panelDark, ikat: MAT.ikat }[type];
     const p = box(g, 'panel_face', w - 0.012, Hp, type === 'ikat' ? 0.025 : 0.035, m, 0, 0.1 + Hp / 2, type === 'ikat' ? 0.03 : 0.0175); p.receiveShadow = true;
     if (type === 'ikat') box(g, 'ikat_backing', w, Hp, 0.02, MAT.panelDark, 0, 0.1 + Hp / 2, 0.01);
@@ -1394,7 +1409,7 @@ function buildRoom({ products }) {
     entrance: { label: 'Entrance & Console', pos: [0.8, 1.6, -2.1], target: [-HX, 1.15, -4.2] },
   };
   const setBrandPanel = (list, title) => { const old = bpFace.material.map; bpFace.material.map = brandPanelTexture(list, title); bpFace.material.needsUpdate = true; old && old.dispose(); };
-  return { root, slots, interactives, presets, setBrandPanel, intro: { pos: [CX, 2.45, HZ - 0.3], target: [CX, 1.55, -HZ] }, bounds: { x: HX - 0.3, zMin: -HZ + 0.3, zMax: HZ - 0.3, yMin: 0.35, yMax: 2.6 } };
+  return { root, slots, interactives, presets, setBrandPanel, wallPanels, intro: { pos: [CX, 2.45, HZ - 0.3], target: [CX, 1.55, -HZ] }, bounds: { x: HX - 0.3, zMin: -HZ + 0.3, zMax: HZ - 0.3, yMin: 0.35, yMax: 2.6 } };
 }
 
 return { buildRoom, makeDisplay };
@@ -1408,6 +1423,12 @@ return { buildRoom, makeDisplay };
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const byId = {};
+const CAT_ALL = window.CATALOG || [];
+const brandById = Object.fromEntries(CAT_ALL.map(b => [b.id, b]));
+const PID2BID = {}; CAT_ALL.forEach(b => b.products.forEach(q => { PID2BID[q.id] = b.id; }));
+const thumbOf = b => 'photos/catalog/thumb/' + b.id + '.jpg';
+const SECL = { craft: 'Kriya & Fashion', food: 'Makanan & Minuman' };
+const fobTxt = v => !v ? 'on request' : (/^\d/.test(v) ? 'USD ' + v : v);
 const rebuildIndex = () => { Object.keys(byId).forEach(k => delete byId[k]); PRODUCTS.forEach(p => { byId[p.id] = p; }); };
 const ZONES = { featured: 'Featured · Meja Ruang Mendag', table: 'Meja Tengah Lounge', side: 'Meja Samping Emas', nest: 'Meja Nesting Lounge', gunungan: 'Konsol Gunungan', console: 'Konsol Pintu Masuk' };
 const zoneOf = p => p.display ? (ZONES[p.display.split('-')[0]] || 'Ruang Mendag') : `Katalog PPPB ${state.year}`;
@@ -1652,6 +1673,38 @@ async function init3D() {
   const aboutTex = await load(SHOWROOM.aboutImage);
   if (aboutTex) { const d = makeDisplay(aboutTex, room.slots.about, { style: 'wall' }); d.userData.action = 'about'; d.userData.label = 'Ruang Mendag'; d.userData.sub = 'About Pilihan BuSan'; dispList.push(d); }
   let yearToken = 0;
+  // ---- catalogue wall: every brand of the chosen year hangs as a framed tile on the wall panels ----
+  // craft & fashion on the east feature wall (grey + dark panels, 4 rows), food & beverage on the west wall (5 rows)
+  const tileSlots = { E: [], W: [] }, tiles = {};
+  const COLS = { grey: [-0.235, 0.235], dark: [0], slat: [-0.235, 0.235] };
+  room.wallPanels.forEach(wp => {
+    const cols = COLS[wp.type]; if (!cols) return;
+    if (wp.side === 'E' && wp.type === 'slat') return;               // keep the gold-leaf feature panel clear
+    if (wp.side === 'W' && wp.zc + wp.w / 2 > 4.4) return;            // keep the brand information panel clear
+    const rows = wp.side === 'E' ? [2.47, 2.02, 1.57, 1.12] : [2.47, 2.02, 1.57, 1.12, 0.67];
+    const dir = wp.side === 'E' ? 1 : -1;
+    rows.forEach(y => cols.forEach(x => {
+      const a = new THREE.Object3D(); a.name = 'slot_tile'; a.position.set(x, y, 0.05); a.userData = { maxW: 0.33, maxH: 0.39 };
+      wp.g.add(a); tileSlots[wp.side].push({ a, z: wp.zc + dir * x, y });
+    }));
+  });
+  ['E', 'W'].forEach(k => tileSlots[k].sort((p, q) => p.z - q.z || q.y - p.y));
+  async function setYearTiles(year, my) {
+    Object.keys(tiles).forEach(id => {
+      const d = tiles[id]; d.parent && d.parent.remove(d);
+      d.traverse(o => { if (o.isMesh) { o.geometry.dispose(); if (o.material.name === 'product_photo') { o.material.map && o.material.map.dispose(); o.material.dispose(); } } });
+      const k = dispList.indexOf(d); if (k >= 0) dispList.splice(k, 1); delete tiles[id];
+    });
+    const bs = CAT_ALL.filter(b => String(b.period).startsWith(year)).sort((a, b) => a.period.localeCompare(b.period));
+    const craft = bs.filter(b => b.section === 'craft'), food = bs.filter(b => b.section !== 'craft');
+    const plan = [...craft.map((b, i) => [b, tileSlots.E[i] || tileSlots.W[food.length + i - tileSlots.E.length]]), ...food.map((b, i) => [b, tileSlots.W[i] || tileSlots.E[craft.length + i - tileSlots.W.length]])];
+    const texs = await Promise.all(plan.map(([b]) => load(thumbOf(b))));
+    if (my !== yearToken) { texs.forEach(t => t && t.dispose()); return; }
+    plan.forEach(([b, sl], i) => {
+      if (!sl || !texs[i]) { console.warn('No wall slot/tile for', b.id); return; }
+      const d = makeDisplay(texs[i], sl.a, { style: 'tile' }); d.userData.bid = b.id; tiles[b.id] = d; dispList.push(d);
+    });
+  }
   async function setYearDisplays(year) {
     const my = ++yearToken;
     Object.keys(displays).forEach(id => {
@@ -1659,6 +1712,7 @@ async function init3D() {
       d.traverse(o => { if (o.isMesh) { o.geometry.dispose(); if (o.material.map && o.material.name === 'product_photo') o.material.map.dispose(); } });
       const k = dispList.indexOf(d); if (k >= 0) dispList.splice(k, 1); delete displays[id];
     });
+    setYearTiles(year, my);
     const shown = PRODUCTS.filter(p => p.display && room.slots[p.display]);
     room.setBrandPanel(shown, 'PPPB ' + year);
     const texs = await Promise.all(shown.map(p => load(p.texture)));
@@ -1674,61 +1728,100 @@ async function init3D() {
   room.interactives.forEach(it => Object.assign(it.mesh.userData, { action: it.action, label: it.label, sub: it.sub }));
   room.root.traverse(o => { if (o.isMesh && o.material.transparent) o.raycast = () => {}; });
 
-  // controls
-  const controls = new OrbitControls(camera, canvas);
-  Object.assign(controls, { enableDamping: true, dampingFactor: 0.08, rotateSpeed: 0.5, zoomSpeed: 0.8, panSpeed: 0.7, minDistance: 0.35, maxDistance: 6.5, maxPolarAngle: Math.PI * 0.62, minPolarAngle: Math.PI * 0.15, screenSpacePanning: true });
-  const B = room.bounds, cl = (v, a, b) => Math.max(a, Math.min(b, v));
-  const clampCam = () => {
-    const p = camera.position, t = controls.target;
-    p.x = cl(p.x, -B.x, B.x); p.z = cl(p.z, B.zMin, B.zMax); p.y = cl(p.y, B.yMin, B.yMax);
-    t.x = cl(t.x, -B.x - 0.28, B.x + 0.28); t.z = cl(t.z, B.zMin - 0.28, B.zMax + 0.28); t.y = cl(t.y, 0.2, 2.9);
-  };
-  const intro = room.intro;
-  camera.position.set(...intro.pos); controls.target.set(...intro.target); camera.lookAt(controls.target);
-
-  let tween = null;
+  // ---- first-person camera (walk at eye height) ----
+  const B = room.bounds, cl = (v, a, b) => Math.max(a, Math.min(b, v)), EYE = 1.6;
+  const fp = { x: 0, z: 0, yaw: 0, pitch: 0 };
+  camera.rotation.order = 'YXZ';
+  const aim = (x, z, t) => { const dx = t.x - x, dy = t.y - EYE, dz = t.z - z; return { yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)) }; };
   const V = a => Array.isArray(a) ? new THREE.Vector3(...a) : a.clone();
-  function flyTo(pos, target, dur = 1.3, done) {
-    const p1 = V(pos); p1.x = cl(p1.x, -B.x, B.x); p1.z = cl(p1.z, B.zMin, B.zMax); p1.y = cl(p1.y, B.yMin, B.yMax);
-    if (tween) clearTimeout(tween.timer);
-    tween = { p0: camera.position.clone(), t0: controls.target.clone(), p1, t1: V(target), start: performance.now(), dur: dur * 1000, done, lift: Math.min(0.45, camera.position.distanceTo(p1) * 0.08) };
-    tween.timer = setTimeout(finishTween, dur * 1000 + 400);
-    controls.enabled = false;
+  const applyCam = () => { camera.position.set(fp.x, EYE, fp.z); camera.rotation.set(fp.pitch, fp.yaw, 0); };
+  { const ip = V(room.intro.pos), a = aim(ip.x, ip.z, V(room.intro.target)); Object.assign(fp, { x: ip.x, z: ip.z }, a); applyCam(); }
+
+  // colliders: furniture footprints, read from the room itself
+  const RECTS = [], SKIP = /^(floor|wall_|skirting|ceiling|soffit|cove|downlight|ac_grille|panel_|brand_panel|brand_frame|rug|lights|gold_leaf|slot_|brand_info)/;
+  room.root.updateMatrixWorld(true);
+  room.root.children.forEach(c => {
+    if (c.isLight || SKIP.test(c.name || '')) return;
+    const bx = new THREE.Box3().setFromObject(c);
+    if (bx.isEmpty() || bx.min.y > 1.0 || bx.max.y < 0.15) return;
+    RECTS.push({ x0: bx.min.x, x1: bx.max.x, z0: bx.min.z, z1: bx.max.z });
+  });
+  function resolve(p) {
+    const R = 0.22;
+    for (const q of RECTS) {
+      const x0 = q.x0 - R, x1 = q.x1 + R, z0 = q.z0 - R, z1 = q.z1 + R;
+      if (p.x > x0 && p.x < x1 && p.z > z0 && p.z < z1) { const m = Math.min(p.x - x0, x1 - p.x, p.z - z0, z1 - p.z); if (m === p.x - x0) p.x = x0; else if (m === x1 - p.x) p.x = x1; else if (m === p.z - z0) p.z = z0; else p.z = z1; }
+    }
+    p.x = cl(p.x, -B.x, B.x); p.z = cl(p.z, B.zMin, B.zMax);
   }
-  function finishTween() {
-    if (!tween) return; const tw = tween; tween = null; clearTimeout(tw.timer);
-    camera.position.copy(tw.p1); controls.target.copy(tw.t1); controls.enabled = true; controls.update(); tw.done && tw.done();
+  const angD = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
+  let tween = null;
+  function flyTo(pos, target, dur = 1.3, done, keepLook) {
+    const p1 = V(pos); p1.x = cl(p1.x, -B.x, B.x); p1.z = cl(p1.z, B.zMin, B.zMax);
+    const a = keepLook ? { yaw: fp.yaw, pitch: fp.pitch } : aim(p1.x, p1.z, V(target));
+    tween = { f: { ...fp }, t: { x: p1.x, z: p1.z, yaw: a.yaw, pitch: cl(a.pitch, -1.2, 1.2) }, start: performance.now(), dur: dur * 1000, done };
   }
+  function walkTo(pt) { const p = { x: pt.x, z: pt.z }; resolve(p); flyTo([p.x, EYE, p.z], null, Math.max(0.35, Math.hypot(p.x - fp.x, p.z - fp.z) / 3), null, true); }
   function productView(id) {
-    const d = displays[id], photo = d.userData.photo;
-    const c = photo.getWorldPosition(new THREE.Vector3()), n = new THREE.Vector3(); d.parent.getWorldDirection(n);
-    const [w, h] = d.userData.size, f = Math.tan(camera.fov * Math.PI / 360);
-    const dist = Math.max(0.8, Math.max(h, w / camera.aspect) / 2 / f * 2.6 + 0.2);
-    const pos = c.clone().addScaledVector(n, dist); pos.y += 0.14;
-    return { pos, target: c };
+    const d = displays[id] || tiles[id] || tiles[PID2BID[id]], photo = d.userData.photo;
+    const c = photo.getWorldPosition(new THREE.Vector3()), n = new THREE.Vector3(); d.parent.getWorldDirection(n); n.y = 0; n.normalize();
+    const dist = d.userData.style === 'tile' ? (mobile ? 1.75 : 1.3) : (mobile ? 1.45 : 1.1);
+    return { pos: c.clone().addScaledVector(n, dist), target: c };
   }
 
-  // picking
-  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let pickPending = false, ptr = { x: 0, y: 0 }, down = null;
+  // input: drag to look, WASD / arrows, touch joystick, click the floor to walk, wheel to step
+  const keys = {};
+  const uiOpen = () => modal.classList.contains('open');
+  addEventListener('keydown', e => { if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || !state.entered || uiOpen()) return; keys[e.code] = true; if (/^Arrow|Space/.test(e.code)) e.preventDefault(); });
+  addEventListener('keyup', e => { keys[e.code] = false; });
+  addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+  const joyEl = $('#joy'), knob = $('#knob'), joyHint = $('#joyhint');
+  if (mobile) document.body.classList.add('touch');
+  const joy = { id: null, cx: 0, cy: 0, x: 0, y: 0 }, look = { id: null, sx: 0, sy: 0, lx: 0, ly: 0, t: 0, drag: false };
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let pickPending = false, ptr = { x: 0, y: 0 };
+  const FLOORS = new Set(['floor', 'rug_grey', 'rug_patterned']);
   function pick(x, y) {
     ndc.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
     const hit = ray.intersectObject(room.root, true)[0]; if (!hit) return null;
-    for (let o = hit.object; o; o = o.parent) { if (o.userData.pid || o.userData.action) return o; if (o === room.root) break; }
+    for (let o = hit.object; o; o = o.parent) { if (o.userData.pid || o.userData.bid || o.userData.action) return o; if (o === room.root) break; }
+    if (FLOORS.has(hit.object.name)) return { floor: true, point: hit.point, userData: {} };
     return null;
   }
-  const hitKey = o => o ? (o.userData.pid || o.userData.action) : null;
-  canvas.addEventListener('pointermove', e => { ptr = { x: e.clientX, y: e.clientY }; if (e.pointerType === 'mouse') pickPending = true; });
-  canvas.addEventListener('pointerleave', () => { state.hovered = null; hideTip(); canvas.style.cursor = ''; });
-  canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; $('#hint')?.classList.add('gone'); });
-  canvas.addEventListener('pointerup', e => {
-    if (!down || tween || !state.entered) return;
-    const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
-    if (moved > 6 || dt > 650) return;
+  const hitKey = o => o && !o.floor ? (o.userData.pid || o.userData.bid || o.userData.action) : null;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.14, 0.2, 40), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.8, depthWrite: false, toneMapped: false }));
+  ring.rotation.x = -Math.PI / 2; ring.visible = false; ring.raycast = () => {}; scene.add(ring);
+  const openTile = bid => { const b = brandById[bid], q = b && b.products[0]; if (q && byId[q.id]) openDetail(q.id); };
+  canvas.addEventListener('pointerdown', e => {
+    $('#hint')?.classList.add('gone'); if (!state.entered) return;
+    if (e.pointerType === 'touch' && joy.id === null && e.clientX < innerWidth * 0.45 && e.clientY > innerHeight * 0.45) {
+      Object.assign(joy, { id: e.pointerId, cx: e.clientX, cy: e.clientY, x: 0, y: 0 }); joyEl.style.left = e.clientX + 'px'; joyEl.style.top = e.clientY + 'px'; joyEl.style.display = 'block'; knob.style.transform = ''; joyHint.classList.remove('on'); tween = null; canvas.setPointerCapture(e.pointerId); return;
+    }
+    if (look.id === null) { Object.assign(look, { id: e.pointerId, sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), drag: false }); canvas.setPointerCapture(e.pointerId); }
+  });
+  canvas.addEventListener('pointermove', e => {
+    ptr = { x: e.clientX, y: e.clientY }; if (e.pointerType === 'mouse') pickPending = true;
+    if (e.pointerId === joy.id) { let dx = e.clientX - joy.cx, dy = e.clientY - joy.cy; const d = Math.hypot(dx, dy), m = 48; if (d > m) { dx = dx / d * m; dy = dy / d * m; } joy.x = dx / m; joy.y = dy / m; knob.style.transform = `translate(${dx}px,${dy}px)`; return; }
+    if (e.pointerId === look.id) {
+      if (!look.drag && Math.hypot(e.clientX - look.sx, e.clientY - look.sy) > 6) { look.drag = true; tween = null; canvas.style.cursor = 'grabbing'; }
+      if (look.drag) { const k = e.pointerType === 'touch' ? 0.005 : 0.0036; fp.yaw += (e.clientX - look.lx) * k; fp.pitch = cl(fp.pitch + (e.clientY - look.ly) * k, -1.2, 1.2); }
+      look.lx = e.clientX; look.ly = e.clientY;
+    }
+  });
+  const endPtr = e => {
+    if (e.pointerId === joy.id) { joy.id = null; joy.x = joy.y = 0; joyEl.style.display = 'none'; return; }
+    if (e.pointerId !== look.id) return;
+    const wasDrag = look.drag; look.id = null; look.drag = false; canvas.style.cursor = '';
+    if (wasDrag || e.type !== 'pointerup' || performance.now() - look.t > 650 || !state.entered || uiOpen()) return;
     const o = pick(e.clientX, e.clientY); if (!o) return;
+    if (o.floor) return walkTo(o.point);
     if (o.userData.pid) openDetail(o.userData.pid);
+    else if (o.userData.bid) openTile(o.userData.bid);
     else if (o.userData.action === 'about') openAbout();
     else if (o.userData.action === 'all') openDrawer('all');
-  });
+  };
+  canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
+  canvas.addEventListener('pointerleave', () => { state.hovered = null; hideTip(); ring.visible = false; canvas.style.cursor = ''; });
+  canvas.addEventListener('wheel', e => { if (!state.entered || uiOpen()) return; e.preventDefault(); tween = null; const st = cl(-e.deltaY * 0.004, -0.6, 0.6); fp.x += -Math.sin(fp.yaw) * st; fp.z += -Math.cos(fp.yaw) * st; resolve(fp); }, { passive: false });
 
   function resize() { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight, false); }
   addEventListener('resize', resize);
@@ -1739,35 +1832,51 @@ async function init3D() {
   function loop(now) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (expo.dur) { const k = Math.min(1, (now - expo.start) / expo.dur); renderer.toneMappingExposure = expo.from + (1.12 - expo.from) * k; if (k >= 1) expo.dur = 0; }
+    let f = 0, sd = 0, turn = 0;
+    if (state.entered && !uiOpen()) {
+      if (keys.KeyW || keys.ArrowUp) f += 1; if (keys.KeyS || keys.ArrowDown) f -= 1; if (keys.KeyA) sd -= 1; if (keys.KeyD) sd += 1;
+      if (keys.ArrowLeft || keys.KeyQ) turn += 1; if (keys.ArrowRight || keys.KeyE) turn -= 1;
+      f -= joy.y; sd += joy.x;
+    }
+    if (f || sd || turn) tween = null;
     if (tween) {
-      const k = Math.min(1, (now - tween.start) / tween.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-      camera.position.lerpVectors(tween.p0, tween.p1, e); camera.position.y += Math.sin(Math.PI * e) * tween.lift;
-      controls.target.lerpVectors(tween.t0, tween.t1, e); camera.lookAt(controls.target);
-      if (k >= 1) finishTween();
-    } else { controls.update(); clampCam(); }
+      const k = Math.min(1, (now - tween.start) / tween.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, a = tween.f, b = tween.t;
+      fp.x = a.x + (b.x - a.x) * e; fp.z = a.z + (b.z - a.z) * e; fp.yaw = a.yaw + angD(a.yaw, b.yaw) * e; fp.pitch = a.pitch + (b.pitch - a.pitch) * e;
+      if (k >= 1) { const d = tween.done; tween = null; d && d(); }
+    } else {
+      fp.yaw += turn * 1.7 * dt;
+      const len = Math.hypot(f, sd);
+      if (len > 0) { const sp = (keys.ShiftLeft || keys.ShiftRight ? 3.4 : 2.0) * dt, nf = f / Math.max(1, len), ns = sd / Math.max(1, len);
+        fp.x += (-Math.sin(fp.yaw) * nf + Math.cos(fp.yaw) * ns) * sp; fp.z += (-Math.cos(fp.yaw) * nf - Math.sin(fp.yaw) * ns) * sp; resolve(fp); }
+    }
+    applyCam();
 
-    if (pickPending && state.entered && !tween && !modal.classList.contains('open')) {
+    if (pickPending && state.entered && !tween && !uiOpen() && look.id === null) {
       pickPending = false;
       const o = pick(ptr.x, ptr.y), k = hitKey(o);
-      state.hovered = k; canvas.style.cursor = k ? 'pointer' : '';
-      if (o) {
-        const p = byId[o.userData.pid];
-        showTip(p ? `<span class="tip-k">${esc(brandOf(p).split(' — ')[0])}</span><span class="tip-t">${esc(p.name)}</span>` : `<span class="tip-k">${esc(o.userData.label)}</span><span class="tip-t">${esc(o.userData.sub)}</span>`, ptr.x, ptr.y);
+      state.hovered = k; canvas.style.cursor = k ? 'pointer' : (o && o.floor ? 'crosshair' : '');
+      ring.visible = !!(o && o.floor); if (ring.visible) ring.position.set(o.point.x, o.point.y + 0.01, o.point.z);
+      if (o && !o.floor) {
+        const p = byId[o.userData.pid], b = brandById[o.userData.bid];
+        if (b) { const q = b.products[0] || {}; showTip(`<span class="tip-k">${esc(SECL[b.section] || '')} · ${b.products.length} produk</span><span class="tip-t">${esc(b.brand)}</span><span class="tip-k" style="letter-spacing:.04em;text-transform:none">${esc(q.name || '')} · FOB ${esc(fobTxt(q.fob))} · MOQ ${esc(q.moq || 'on request')}</span>`, ptr.x, ptr.y); }
+        else showTip(p ? `<span class="tip-k">${esc(brandOf(p).split(' — ')[0])}</span><span class="tip-t">${esc(p.name)}</span>` : `<span class="tip-k">${esc(o.userData.label)}</span><span class="tip-t">${esc(o.userData.sub)}</span>`, ptr.x, ptr.y);
       } else hideTip();
-    } else if (modal.classList.contains('open') && state.hovered) { state.hovered = null; hideTip(); canvas.style.cursor = ''; }
+    } else if ((uiOpen() || look.drag) && (state.hovered || ring.visible)) { state.hovered = null; hideTip(); ring.visible = false; canvas.style.cursor = look.drag ? 'grabbing' : ''; }
 
+    const activeB = state.active ? PID2BID[state.active] : null;
     for (const d of dispList) {
-      const u = d.userData, key = u.pid || u.action;
-      const tgt = key && (state.hovered === key || state.active === key) ? 1 : 0;
+      const u = d.userData, key = u.pid || u.bid || u.action;
+      const tgt = key && (state.hovered === key || state.active === key || (u.bid && u.bid === activeB)) ? 1 : 0;
       if (Math.abs(tgt - u.hover) < 0.001 && !u.dirty) continue;
       u.hover += (tgt - u.hover) * Math.min(1, dt * 9);
-      d.scale.setScalar(1 + u.hover * 0.035);
+      d.scale.setScalar(1 + u.hover * (u.style === 'tile' ? 0.08 : 0.035));
       u.frameMat.emissiveIntensity = u.hover * 0.7;
       const c = 0.86 + u.hover * 0.14; u.photoMat.color.setRGB(c, c, c);
       if (u.style === 'stand') u.panel.position.z = -0.02 + u.hover * 0.015;
+      if (u.style === 'tile') d.position.z = u.hover * 0.04;
     }
     renderer.render(scene, camera);
-    if (dbg) { fc++; if (now - ft > 1000) { dbg.textContent = `fps ${fc} · lost ${renderer.getContext().isContextLost()} · calls ${renderer.info.render.calls}`; fc = 0; ft = now; } }
+    if (dbg) { fc++; if (now - ft > 1000) { dbg.textContent = `fps ${fc} · calls ${renderer.info.render.calls} · ${fp.x.toFixed(2)},${fp.z.toFixed(2)}`; fc = 0; ft = now; } }
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
@@ -1775,15 +1884,19 @@ async function init3D() {
   three = {
     enter() {
       expo = { from: 0.25, start: performance.now(), dur: 1600 };
-      const o = room.presets.overview; flyTo(o.pos, o.target, 3.0, () => $('#hint')?.classList.add('on'));
-      setTimeout(() => $('#hint')?.classList.add('gone'), 14000);
+      const deep = decodeURIComponent(location.hash.slice(1));
+      const o = room.presets.overview;
+      flyTo(o.pos, o.target, 3.0, () => {
+        $('#hint')?.classList.add('on'); if (mobile) joyHint.classList.add('on');
+        if (byId[deep]) openDetail(deep); else if (brandById[deep]) openTile(deep);
+      });
+      setTimeout(() => { $('#hint')?.classList.add('gone'); joyHint.classList.remove('on'); }, 14000);
     },
     preset(k) { const p = room.presets[k]; if (p) flyTo(p.pos, p.target, 1.5); },
     setYear: setYearDisplays,
-    focus(id, done, quick) { if (!displays[id]) return done && done(); const v = productView(id); flyTo(v.pos, v.target, quick ? 0.9 : 1.15, done); },
+    focus(id, done, quick) { if (!displays[id] && !tiles[PID2BID[id]]) return done && done(); const v = productView(id); flyTo(v.pos, v.target, quick ? 0.9 : 1.2, done); },
   };
-  window.__showroom = { camera, controls, scene, renderer, flyTo, three, snap() { renderer.render(scene, camera); let im = document.getElementById('__snap'); if (!im) { im = document.createElement('img'); im.id = '__snap'; im.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;z-index:1;pointer-events:none'; document.body.appendChild(im); } im.src = canvas.toDataURL('image/jpeg', 0.9); }, unsnap() { document.getElementById('__snap')?.remove(); },
-    view(k) { const p = typeof k === 'string' ? (displays[k] ? productView(k) : room.presets[k]) : k; tween = null; camera.position.copy(V(p.pos)); controls.target.copy(V(p.target)); controls.update(); renderer.toneMappingExposure = 1.12; expo.dur = 0; renderer.render(scene, camera); } };
+  window.__showroom = { camera, scene, renderer, flyTo, three, fp, RECTS, displays, tiles };
   ready('Ruangan siap');
 }
 
