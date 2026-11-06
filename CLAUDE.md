@@ -8,9 +8,14 @@ A first-person virtual exhibition: an Indonesian living room, styled like an IKE
 
 Two people maintain it, each through their own Claude account. Every change must leave the site working for buyers.
 
-## Files
+## Files (since Nov 2026: "Ruang Mendag" design)
 
-- `index.html`: the whole app, meaning the CSS, the 3D scene, the controls and the UI. The sections are marked with comments:
+- `index.html`: the "Ruang Mendag" 3D showroom, exported from a Claude Design artifact and unbundled. The scene, the product list (13 products) and the UI are in its `<script type="module">`. It uses three.js 0.184 as ES modules through an import map that points to `vendor/three/` (no CDN), fonts in `assets/fonts/` and images in `assets/img/`. To change the design, edit it in the design artifact, export a standalone HTML again and unbundle it the same way.
+- `katalog.html`: the previous showroom built around the full PPPB catalogue (105 brands / 204 products). It still uses three.js r128 from cdnjs and the files described below.
+
+The notes below describe `katalog.html` (formerly `index.html`).
+
+- `katalog.html`: the whole app, meaning the CSS, the 3D scene, the controls and the UI. The sections are marked with comments:
   - `/* ---- DATA ---- */`: section labels and UI strings in two languages (the `T` object, keys `en` and `id`).
   - `/* ---- HELPERS ---- */`: canvas textures (floor, rattan weave, teak, batik, ikat, rug, signs).
   - `/* ---- STATE ---- */`: `BOUNDS` (the room is 18 × 13 m), `EYE` (camera height of 1.6 m), `OBST` (collision circles) and `RECTS` (collision boxes for the shelving units).
