@@ -4,13 +4,30 @@ Read this before changing anything in this repo. It explains how the project is 
 
 ## What this is
 
-A first-person virtual exhibition: an Indonesian living room, styled like an IKEA showroom, that international buyers walk through to view local export products. It is a static site on GitHub Pages at https://pilihanbusan.github.io/ruang-tamu. There is no build step and no bundler. The only dependency is three.js r128, loaded from cdnjs as the global `THREE`, so do not use ES-module imports.
+A first-person virtual exhibition: an Indonesian living room, styled like an IKEA showroom, that international buyers walk through to view local export products. It is a static site on GitHub Pages at https://pilihanbusan.github.io/ruang-tamu. There is no build step and no bundler. `index.html` uses three.js 0.184 as ES modules from `vendor/three/` (through an import map). `katalog.html` still uses three.js r128 from cdnjs as a global `THREE`.
 
 Two people maintain it, each through their own Claude account. Every change must leave the site working for buyers.
 
 ## Files (since Nov 2026: "Ruang Mendag" design)
 
-- `index.html`: the "Ruang Mendag" 3D showroom, exported from a Claude Design artifact and unbundled. The scene, the product list (13 products) and the UI are in its `<script type="module">`. It uses three.js 0.184 as ES modules through an import map that points to `vendor/three/` (no CDN), fonts in `assets/fonts/` and images in `assets/img/`. To change the design, edit it in the design artifact, export a standalone HTML again and unbundle it the same way.
+- `index.html`: the main showroom. It combines the "Ruang Mendag" room design with first-person walking and the full PPPB catalogue. Everything lives in its `<script type="module">`:
+  - `PRODUCTS`: the 13 products physically displayed in Ruang Mendag (on tables and consoles). `CAT_LINK` connects six of them to their catalogue brand, so their detail view links to contacts, FOB and MOQ.
+  - `buildRoom()`: the room. Its size is 7.2 m (x) × 13.5 m (z) × 3.0 m, with the branding wall at −z and the gunungan console at +z. It returns `wallPanels`, the panel runs on the east and west walls.
+  - Catalogue tiles (`style: 'tile'` in `makeDisplay`) hang on those wall panels:
+    - Craft & Fashion: the east feature wall, on the grey and dark panels, 4 rows. The ikat and gold-leaf panels stay clear.
+    - Food & Beverage: the west wall, 5 rows. The area around the brand information panel stays clear.
+    - Each tile has `userData.bid` (the brand id). Within each wall, 2026 brands come first.
+  - First-person controls replace OrbitControls:
+    - Eye height is 1.6 m.
+    - Desktop: drag to look, WASD or the arrow keys to walk (Shift to run), Q and E to turn, the mouse wheel to step, and a click on the floor or rugs to walk there.
+    - Touch: a joystick on the left thumb.
+    - Colliders are built automatically from the furniture footprints (`RECTS`).
+    - The dock presets (Overview, Branding, …) fly the walker to fixed viewpoints.
+  - UI:
+    - The **Katalog PPPB** nav button opens a searchable, filterable drawer.
+    - The brand detail modal shows contacts with WhatsApp, email, Instagram and website links, export markets, all products with FOB, MOQ and specifications, and an inquiry form (a chat-style WhatsApp message, or an email text to copy).
+  - Deep links: `#<brand-id>` or `#<product-id>` opens that item after the visitor enters.
+  - Fonts are in `assets/fonts/` and room images in `assets/img/`. To restyle the room, edit `buildRoom()` directly. Keep the first-person block and the catalogue tiles working when you do.
 - `katalog.html`: the previous showroom built around the full PPPB catalogue (105 brands / 204 products). It still uses three.js r128 from cdnjs and the files described below.
 
 The notes below describe `katalog.html` (formerly `index.html`).

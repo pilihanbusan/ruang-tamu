@@ -541,6 +541,45 @@ textarea.input { min-height: 90px; resize: vertical; }
   .in-photo figcaption { position: absolute; left: 0; right: 0; bottom: -22px; color: var(--color-accent-300); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
   .in-foot { position: absolute; left: clamp(28px, 6vw, 96px); bottom: 28px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-accent-400); }
 
+
+  /* first-person controls */
+  #joy { position: fixed; z-index: 12; width: 116px; height: 116px; border-radius: 50%; background: color-mix(in srgb, var(--color-bg) 22%, transparent); border: 1px solid color-mix(in srgb, var(--color-bg) 70%, transparent); display: none; pointer-events: none; transform: translate(-50%, -50%); }
+  #knob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: color-mix(in srgb, var(--color-bg) 92%, transparent); box-shadow: var(--shadow-md); }
+  #joyhint { position: fixed; z-index: 11; left: 20px; bottom: 84px; width: 84px; height: 84px; border-radius: 50%; border: 1px dashed color-mix(in srgb, var(--color-bg) 80%, transparent); color: var(--color-bg); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; display: none; align-items: center; justify-content: center; text-align: center; pointer-events: none; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  body.entered.touch #joyhint.on { display: flex; }
+  .h-touch { display: none !important; } body.touch .h-touch { display: inline-flex !important; } body.touch .h-desk { display: none !important; }
+  #walkring { display: none; }
+  /* catalogue drawer + brand detail */
+  .dr-tools { display: flex; flex-direction: column; gap: var(--space-2); flex: none; }
+  .dr-search { width: 100%; font: inherit; font-size: 14px; padding: 9px 12px; border: 1px solid var(--color-divider); background: color-mix(in srgb, var(--color-bg) 70%, transparent); color: var(--color-text); }
+  .dr-search:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; }
+  .dr-count { font-size: 12px; color: var(--color-neutral-700); }
+  .pcard-img.is-tile { aspect-ratio: 256/296; }
+  .pcard-img.is-tile img { object-fit: contain; background: #fff; }
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .cbtn { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 9px 11px; border: 1px solid var(--color-divider); font-size: 13px; text-decoration: none; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cbtn:hover { border-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 6%, transparent); color: var(--color-text); }
+  .cbtn.wa { background: #1f7a4a; border-color: #1f7a4a; color: #fff; } .cbtn.wa:hover { background: #18663d; color: #fff; }
+  .cbtn span { overflow: hidden; text-overflow: ellipsis; }
+  .addr { font-size: 13px; color: var(--color-neutral-700); margin: 0 0 8px; }
+  .prod-list { display: grid; gap: var(--space-3); }
+  .prod-item { border: 1px solid var(--color-divider); padding: var(--space-3); cursor: pointer; transition: border-color .2s, background .2s; }
+  .prod-item:hover { border-color: var(--color-accent); }
+  .prod-item.on { border-color: var(--color-accent); background: color-mix(in srgb, var(--color-accent) 6%, transparent); }
+  .prod-item h4 { font-size: 19px; margin: 0 0 2px; }
+  .prod-item .alt { font-size: 12px; font-style: italic; color: var(--color-neutral-700); margin: 0 0 6px; }
+  .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0 8px; }
+  .kpis div { border: 1px solid var(--color-divider); padding: 6px 9px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--color-neutral-700); }
+  .kpis b { display: block; font-family: var(--font-heading); font-size: 18px; letter-spacing: .01em; text-transform: none; color: var(--color-text); }
+  .prod-item .pd { font-size: 14px; color: var(--color-neutral-800); margin: 0 0 6px; }
+  .prod-item .pd.clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .src-note { font-size: 12px; color: var(--color-neutral-700); border-left: 2px solid var(--color-accent); padding: 4px 0 4px 10px; margin: var(--space-3) 0 0; }
+  .inq { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .inq input, .inq textarea { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid var(--color-divider); background: transparent; color: var(--color-text); min-width: 0; }
+  .inq textarea { grid-column: 1 / -1; height: 56px; resize: vertical; }
+  .inq .row { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+  .inq .ok { grid-column: 1 / -1; font-size: 12px; color: #1f7a4a; min-height: 14px; }
+  .link-cat { margin-top: var(--space-2); }
   @media (max-width: 980px) {
     .nb span { display: none; } .nb { padding: 10px; }
     .nb[aria-current]::after { left: 8px; right: 8px; }
@@ -583,6 +622,7 @@ textarea.input { min-height: 90px; resize: vertical; }
   <nav class="mainnav" aria-label="Navigasi utama">
     <button class="nb" data-nav="explore" data-icon="compass" aria-current="page"><span>Explore Room</span></button>
     <button class="nb" data-nav="all" data-icon="grid"><span>All Products</span></button>
+    <button class="nb" data-nav="catalog" data-icon="book"><span>Katalog PPPB</span></button>
     <button class="nb" data-nav="featured" data-icon="star"><span>Featured</span></button>
     <button class="nb" data-nav="about" data-icon="info"><span>About Pilihan BuSan</span></button>
   </nav>
@@ -602,12 +642,15 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 <div id="hint" class="paper blueprint">
   <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-  <span data-icon="move" data-size="15">Geser untuk melihat</span>
-  <span data-icon="zoom" data-size="15">Scroll / pinch untuk zoom</span>
-  <span data-icon="pointer" data-size="15">Klik produk</span>
+  <span data-icon="move" data-size="15" class="h-desk">Seret untuk melihat · WASD untuk berjalan</span>
+  <span data-icon="move" data-size="15" class="h-touch">Seret untuk melihat · joystick untuk berjalan</span>
+  <span data-icon="compass" data-size="15">Klik lantai untuk pindah</span>
+  <span data-icon="pointer" data-size="15">Klik produk untuk detail</span>
 </div>
 
 <div id="tip" role="status"></div>
+<div id="joy" aria-hidden="true"><div id="knob"></div></div>
+<div id="joyhint" aria-hidden="true">Geser<br>di sini</div>
 <aside id="drawer" class="paper blueprint" aria-label="Daftar produk"></aside>
 <div id="modal"><div class="dt blueprint" role="dialog" aria-modal="true"></div></div>
 
@@ -632,9 +675,9 @@ textarea.input { min-height: 90px; resize: vertical; }
 </section>
 
 
+<script src="data/catalog.js"></script>
 <script type="module">
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 {
 const { PRODUCTS, SHOWROOM, GROUPS } = (() => {
 // Product database — the single source of truth for every display in the room.
@@ -1294,7 +1337,7 @@ function makeDisplay(tex, anchor, { label = null, style = 'stand' } = {}) {
   const g = new THREE.Group(); g.name = 'display'; const panel = new THREE.Group(); panel.name = 'display_panel'; g.add(panel);
   const photoMat = new THREE.MeshBasicMaterial({ name: 'product_photo', map: tex, toneMapped: false, color: new THREE.Color(0.86, 0.86, 0.86) });
   const frameMat = MAT.frame.clone(); frameMat.emissive = new THREE.Color('#e3bb6c'); frameMat.emissiveIntensity = 0;
-  const fw = style === 'wall' ? 0.05 : 0.012, fd = style === 'wall' ? 0.05 : 0.022;
+  const fw = style === 'wall' ? 0.05 : style === 'tile' ? 0.014 : 0.012, fd = style === 'wall' ? 0.05 : 0.022;
   let cy = 0;
   if (style === 'stand') {
     const bw = Math.max(w + 0.08, 0.26);
@@ -1306,6 +1349,12 @@ function makeDisplay(tex, anchor, { label = null, style = 'stand' } = {}) {
       const pl = mesh(new THREE.PlaneGeometry(lw, lw * 96 / 512), new THREE.MeshBasicMaterial({ map: lt, toneMapped: false, color: new THREE.Color(0.85, 0.85, 0.85) }), 'display_label', g, 0, 0.0335, 0.045);
       pl.rotation.x = -Math.PI / 2 + 0.35;
     }
+  }
+  if (style === 'tile') {   // light-weight catalogue tile: one brass frame block + the photo (2 draw calls)
+    const fr = box(panel, 'tile_frame', w + 2 * fw, h + 2 * fw, fd, frameMat, 0, 0, -fd / 2);
+    const ph = mesh(new THREE.PlaneGeometry(w, h), photoMat, 'product_photo', panel, 0, 0, 0.002);
+    g.userData = { panel, photo: ph, photoMat, frameMat, size: [w, h], hover: 0, style, hits: [ph, fr] };
+    anchor.add(g); return g;
   }
   const backer = box(panel, 'display_backer', w + 2 * fw, h + 2 * fw, fd * 0.6, MAT.paper, 0, cy, -fd * 0.3);
   const bars = [
@@ -1368,9 +1417,9 @@ function buildRoom({ products }) {
   box(root, 'ac_grille_e', 0.06, 0.01, 2.4, MAT.leg, HX - sl + 0.05, sb - 0.004, 1.6);
 
   // wall panel runs
-  const Hp = sb - 0.1;
+  const Hp = sb - 0.1, wallPanels = [];
   const panel = (side, zc, w, type) => {
-    const g = new THREE.Group(); g.name = 'panel_' + type; g.position.set(side === 'E' ? HX : -HX, 0, zc); g.rotation.y = side === 'E' ? -Math.PI / 2 : Math.PI / 2; root.add(g);
+    const g = new THREE.Group(); wallPanels.push({ side, zc, w, type, g }); g.name = 'panel_' + type; g.position.set(side === 'E' ? HX : -HX, 0, zc); g.rotation.y = side === 'E' ? -Math.PI / 2 : Math.PI / 2; root.add(g);
     const m = type === 'slat' ? slatMat(w) : { grey: MAT.panelGrey, dark: MAT.panelDark, ikat: MAT.ikat }[type];
     const p = box(g, 'panel_face', w - 0.012, Hp, type === 'ikat' ? 0.025 : 0.035, m, 0, 0.1 + Hp / 2, type === 'ikat' ? 0.03 : 0.0175); p.receiveShadow = true;
     if (type === 'ikat') box(g, 'ikat_backing', w, Hp, 0.02, MAT.panelDark, 0, 0.1 + Hp / 2, 0.01);
@@ -1482,7 +1531,7 @@ function buildRoom({ products }) {
     gunungan: { label: 'Gunungan Console', pos: [CX, 1.6, 2.7], target: [CX, 1.1, HZ] },
     entrance: { label: 'Entrance & Console', pos: [0.8, 1.6, -2.1], target: [-HX, 1.15, -4.2] },
   };
-  return { root, slots, interactives, presets, intro: { pos: [CX, 2.45, HZ - 0.3], target: [CX, 1.55, -HZ] }, bounds: { x: HX - 0.3, zMin: -HZ + 0.3, zMax: HZ - 0.3, yMin: 0.35, yMax: 2.6 } };
+  return { root, slots, interactives, presets, wallPanels, intro: { pos: [CX, 2.45, HZ - 0.3], target: [CX, 1.55, -HZ] }, bounds: { x: HX - 0.3, zMin: -HZ + 0.3, zMax: HZ - 0.3, yMin: 0.35, yMax: 2.6 } };
 }
 
 return { buildRoom, makeDisplay };
@@ -1495,7 +1544,16 @@ return { buildRoom, makeDisplay };
 /* ---------- helpers ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const CAT_LINK = { 'azaki': '2026-azaki', 'rendang-gadih': '2026-rendang-gadih', 'sagolicious': '2026-sagolicious', 'la-moringa': '2026-la-moringa', 'homliv-pesona': '2026-homliv', 'homliv-sakura': '2026-homliv' };
+PRODUCTS.forEach(p => { if (CAT_LINK[p.id]) p.catalogId = CAT_LINK[p.id]; });
 const byId = Object.fromEntries(PRODUCTS.map(p => [p.id, p]));
+const CATALOG = (window.CATALOG || []).slice();
+const SEC = { craft: 'Kriya & Fashion', food: 'Makanan & Minuman' };
+const perLabel = p => p === '2026' ? 'PPPB 2026' : 'PPPB 2025 · P' + p.slice(-1);
+const byP = (a, b) => (a.period === '2026' ? 0 : 1) - (b.period === '2026' ? 0 : 1) || a.period.localeCompare(b.period);
+CATALOG.sort((a, b) => (a.section === b.section ? 0 : a.section === 'craft' ? -1 : 1) || byP(a, b));
+const brandById = Object.fromEntries(CATALOG.map(b => [b.id, b]));
+const thumbOf = b => 'photos/catalog/thumb/' + b.id + '.jpg';
 const ZONES = { featured: 'Featured · Meja Ruang Mendag', table: 'Meja Tengah Lounge', side: 'Meja Samping Emas', nest: 'Meja Nesting Lounge', gunungan: 'Konsol Gunungan', console: 'Konsol Pintu Masuk' };
 const zoneOf = p => ZONES[(p.display || '').split('-')[0]] || 'Showroom';
 const brandOf = p => p.brand || 'UMKM Pilihan BuSan';
@@ -1512,6 +1570,12 @@ const ICONS = {
   scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/>',
   move: '<polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/>',
   pointer: '<path d="M12.586 12.586 19 19"/><path d="M3.688 3.037a.497.497 0 0 0-.651.651l6.5 15.999a.501.501 0 0 0 .947-.062l1.569-6.083a2 2 0 0 1 1.448-1.479l6.124-1.579a.5.5 0 0 0 .063-.947z"/>',
+  book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
+  chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  insta: '<rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   zoom: '<circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/>',
 };
 const icon = (n, s = 18) => `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
@@ -1554,6 +1618,116 @@ function openDrawer(mode = 'all', group = 'Semua') {
   drawer.classList.add('open');
   $$('input[name=grp]', drawer).forEach(r => r.onchange = () => openDrawer('all', r.value));
 }
+const cat = { q: '', sec: 'all', per: 'all', list: CATALOG.map(b => b.id) };
+function catFiltered() {
+  const q = cat.q.trim().toLowerCase();
+  return CATALOG.filter(b => (cat.sec === 'all' || b.section === cat.sec) && (cat.per === 'all' || b.period === cat.per) &&
+    (!q || [b.brand, b.company, b.address, ...b.products.map(p => p.name)].join(' ').toLowerCase().includes(q)));
+}
+function renderCatGrid() {
+  const list = catFiltered(); cat.list = list.map(b => b.id);
+  $('#cat-count', drawer).textContent = `${list.length} brand`;
+  $('#cat-grid', drawer).innerHTML = list.map(b => `
+      <button class="pcard blueprint" data-brand="${b.id}">${corners}
+        <span class="pcard-img is-tile"><img loading="lazy" src="${thumbOf(b)}" alt="${esc(b.brand)}"></span>
+        <span class="pcard-body">
+          <span class="card-kicker">${esc(SEC[b.section] || '')} · ${perLabel(b.period)}</span>
+          <span class="card-title">${esc(b.brand)}</span>
+          <span class="card-meta">${b.products.length} produk</span>
+        </span>
+      </button>`).join('');
+}
+function openCatalog() {
+  closeModal(false);
+  state.panel = 'catalog'; setNav('catalog');
+  const segs = (name, opts, cur) => `<div class="seg dr-filter" role="radiogroup">${opts.map(([v, l]) => `<label class="seg-opt"><input type="radio" name="${name}" value="${v}" ${v === cur ? 'checked' : ''}>${l}</label>`).join('')}</div>`;
+  drawer.innerHTML = `${corners}
+    <div class="dr-head">
+      <div><h6 class="kicker">Product Placement Pilihan BuSan</h6><h2>Katalog PPPB</h2><p class="text-muted">${CATALOG.length} brand · ${CATALOG.reduce((n, b) => n + b.products.length, 0)} produk · 2025–2026</p></div>
+      <button class="btn btn-icon" data-act="close-drawer" aria-label="Tutup">${icon('x')}</button>
+    </div>
+    <div class="dr-tools">
+      <input class="dr-search" id="cat-q" type="search" placeholder="Cari brand, produk, kota…" value="${esc(cat.q)}">
+      ${segs('csec', [['all', 'Semua'], ['craft', SEC.craft], ['food', SEC.food]], cat.sec)}
+      ${segs('cper', [['all', 'Semua'], ['2026', '2026'], ['2025-1', '2025 · P1'], ['2025-2', '2025 · P2'], ['2025-3', '2025 · P3']], cat.per)}
+      <span class="dr-count" id="cat-count"></span>
+    </div>
+    <div class="dr-grid" id="cat-grid"></div>`;
+  drawer.classList.add('open');
+  renderCatGrid();
+  $('#cat-q', drawer).addEventListener('input', e => { cat.q = e.target.value; renderCatGrid(); });
+  $$('input[name=csec]', drawer).forEach(r => r.onchange = () => { cat.sec = r.value; renderCatGrid(); });
+  $$('input[name=cper]', drawer).forEach(r => r.onchange = () => { cat.per = r.value; renderCatGrid(); });
+}
+const waNum = ph => { if (!ph) return ''; let d = ph.replace(/[^\d]/g, ''); if (d.startsWith('0')) d = '62' + d.slice(1); if (d.startsWith('8')) d = '62' + d; return d.length >= 9 ? d : ''; };
+const igList = s => (s || '').split(/[,\s]+/).map(x => x.replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//, '').replace(/[/?].*$/, '')).filter(Boolean);
+const webUrl = s => { s = (s || '').trim(); return /^https?:\/\//.test(s) ? s : 'https://' + s; };
+const fob = v => !v ? 'On request' : (/^\d/.test(v) ? '$' + v : v);
+function brandHTML(b, pi = 0) {
+  const list = cat.list.includes(b.id) ? cat.list : CATALOG.map(x => x.id);
+  const i = list.indexOf(b.id), n = list.length, p0 = b.products[pi] || b.products[0] || {};
+  const wa = waNum(b.phone), igs = igList(b.instagram);
+  const links = [];
+  if (wa) links.push(`<a class="cbtn wa" href="https://wa.me/${wa}?text=${encodeURIComponent(`Hi ${b.brand}, I found your products in the Pilihan BuSan virtual showroom and would like to know more.`)}" target="_blank" rel="noopener">${icon('chat', 16)}<span>${esc(b.phone)}</span></a>`);
+  else if (b.phone) links.push(`<span class="cbtn">${icon('chat', 16)}<span>${esc(b.phone)}</span></span>`);
+  if (b.email) links.push(`<a class="cbtn" href="mailto:${esc(b.email)}">${icon('mail', 16)}<span>${esc(b.email)}</span></a>`);
+  igs.forEach(h => links.push(`<a class="cbtn" href="https://instagram.com/${encodeURIComponent(h)}" target="_blank" rel="noopener">${icon('insta', 16)}<span>@${esc(h)}</span></a>`));
+  if (b.web) links.push(`<a class="cbtn" href="${esc(webUrl(b.web))}" target="_blank" rel="noopener">${icon('globe', 16)}<span>${esc(b.web.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</span></a>`);
+  const chips = (t, arr) => arr && arr.length ? `<h6>${t}</h6><div class="chips">${arr.map(c => `<span class="tag tag-outline">${esc(c)}</span>`).join('')}</div>` : '';
+  const spec = p => [['Dimensions', p.dimension], ['Material / ingredients', p.material], ['Finishing', p.finishing], ['Net weight', p.weight], ['Certification', p.cert], ['Loadability 40HC', p.load]].filter(r => r[1]).map(r => `<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('');
+  return `${corners}
+  <figure class="dt-media"><img id="dt-img" src="${esc(p0.photo || thumbOf(b))}" alt="${esc(b.brand)} — ${esc(p0.name || '')}"></figure>
+  <div class="dt-info">
+    <div class="dt-top">
+      <span class="tag tag-accent">${esc(SEC[b.section] || '')}</span>
+      <span class="dt-zone">${icon('book', 14)}${perLabel(b.period)}</span>
+      <button class="btn btn-icon dt-close" data-act="close-modal" aria-label="Tutup">${icon('x')}</button>
+    </div>
+    <h6 class="kicker">${esc(b.company)}</h6>
+    <h2>${esc(b.brand)}</h2>
+    ${b.about ? `<p class="dt-desc">${esc(b.about)}</p>` : ''}
+    <section><h6>Contact the company</h6>${b.address ? `<p class="addr">${icon('pin', 13)} ${esc(b.address)}</p>` : ''}<div class="contact-grid">${links.join('')}</div></section>
+    ${(b.exportedTo && b.exportedTo.length) || (b.targetMarkets && b.targetMarkets.length) ? `<section>${chips('Already exported to', b.exportedTo)}${b.exportedTo && b.exportedTo.length && b.targetMarkets && b.targetMarkets.length ? '<div style="height:8px"></div>' : ''}${chips('Target markets', b.targetMarkets)}</section>` : ''}
+    <section><h6>Products (${b.products.length})</h6><div class="prod-list">${b.products.map((p, k) => `
+      <div class="prod-item ${k === pi ? 'on' : ''}" data-pi="${k}">
+        <h4>${esc(p.name)}</h4>${p.alt && p.alt.toLowerCase() !== p.name.toLowerCase() ? `<p class="alt">${esc(p.alt)}</p>` : ''}
+        <div class="kpis"><div>FOB price (USD)<b>${esc(fob(p.fob))}</b></div><div>Min. order (MOQ)<b>${esc(p.moq || 'On request')}</b></div></div>
+        ${p.desc ? `<p class="pd clamp">${esc(p.desc)}</p>` : ''}
+        <dl class="msme">${spec(p)}</dl>
+      </div>`).join('')}</div>
+      <p class="src-note">Source: official Product Placement Pilihan BuSan catalogue. Please confirm prices, MOQ and lead times directly with the company.</p>
+    </section>
+    <section><h6>Send an inquiry</h6><div class="inq">
+      <input id="iq-name" placeholder="Your name"><input id="iq-co" placeholder="Company">
+      <input id="iq-country" placeholder="Country"><input id="iq-qty" placeholder="Product & quantity">
+      <textarea id="iq-msg" placeholder="Message (optional)"></textarea>
+      <div class="row">${wa ? `<button class="btn btn-primary" data-act="inq-wa" data-wa="${wa}">${icon('chat', 16)}Send via WhatsApp</button>` : ''}<button class="btn btn-secondary" data-act="inq-copy">${icon('copy', 16)}Copy inquiry (email)</button></div>
+      <div class="ok" id="iq-ok"></div></div></section>
+    <div class="dt-actions">
+      <div class="dt-pager">
+        <button class="btn btn-icon btn-secondary" data-act="prev" aria-label="Sebelumnya">${icon('left')}</button>
+        <span>${String(i + 1).padStart(3, '0')} / ${String(n).padStart(3, '0')}</span>
+        <button class="btn btn-icon btn-secondary" data-act="next" aria-label="Berikutnya">${icon('right')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+function openBrand(bid, { fly = true } = {}) {
+  const b = brandById[bid]; if (!b) return;
+  if (!cat.list.includes(bid)) cat.list = CATALOG.map(x => x.id);
+  state.active = bid; state.kind = 'brand'; hideTip();
+  if (state.panel) { drawer.classList.remove('open'); state.panel = null; }
+  const show = () => { if (state.active === bid) showModal(brandHTML(b), 'is-detail'); };
+  if (three && fly) three.focus(bid, show); else show();
+  setNav('catalog');
+  try { history.replaceState(null, '', '#' + bid); } catch (e) {}
+}
+function inquiryText(b, chat) {
+  const v = id => ($('#' + id)?.value || '').trim();
+  const who = [v('iq-name'), v('iq-co') && 'from ' + v('iq-co'), v('iq-country') && '(' + v('iq-country') + ')'].filter(Boolean).join(' ');
+  if (chat) return [`Hi ${b.brand}, ${who ? "I'm " + who + ' and I' : 'I'} found your products in the Pilihan BuSan virtual showroom.`, v('iq-qty') ? `I'm interested in: ${v('iq-qty')}.` : '', v('iq-msg') || 'Could you share your FOB price, MOQ and lead time? Thank you!'].filter(Boolean).join('\n\n');
+  return `Subject: Inquiry — ${b.brand}\n\nDear ${b.company},\n\nI found your products in the Pilihan BuSan virtual showroom.\nProduct & quantity: ${v('iq-qty') || '-'}\n\nName: ${v('iq-name') || '-'}\nCompany: ${v('iq-co') || '-'}\nCountry: ${v('iq-country') || '-'}\n\n${v('iq-msg') || 'Please send your best FOB price, MOQ and lead time.'}`;
+}
 function closeDrawer() { drawer.classList.remove('open'); state.panel = null; if (!modal.classList.contains('open')) setNav('explore'); }
 
 function detailHTML(p) {
@@ -1575,7 +1749,7 @@ function detailHTML(p) {
     ${p.details?.length ? `<section><h6>Keunggulan</h6><ul class="specs">${p.details.map(d => `<li>${esc(d)}</li>`).join('')}</ul></section>` : ''}
     <section><h6>Informasi UMKM</h6><dl class="msme">
       ${row('Nama usaha', m?.name)}${row('Lokasi', m?.location)}${row('Sertifikasi', p.certifications?.length ? p.certifications.join(' · ') : null)}
-    </dl></section>
+    </dl>${p.catalogId && brandById[p.catalogId] ? `<button class="btn btn-secondary link-cat" data-brand="${p.catalogId}">${icon('book', 16)}Kontak, harga FOB & MOQ di Katalog PPPB</button>` : ''}</section>
     <div class="dt-actions">
       <div class="dt-pager">
         <button class="btn btn-icon btn-secondary" data-act="prev" aria-label="Sebelumnya">${icon('left')}</button>
@@ -1594,13 +1768,20 @@ function showModal(html, cls) {
 function openDetail(id, { fly = true } = {}) {
   const p = byId[id]; if (!p) return;
   if (!state.list.includes(id)) state.list = PRODUCTS.map(x => x.id);
-  state.active = id; hideTip();
+  state.active = id; state.kind = 'product'; hideTip();
   if (state.panel) { drawer.classList.remove('open'); state.panel = null; }
   const show = () => { if (state.active === id) showModal(detailHTML(p), 'is-detail'); };
   if (three && fly) { three.focus(id, show); } else show();
   setNav(p.featured && state.list.every(k => byId[k].featured) ? 'featured' : 'all');
 }
 function stepDetail(d) {
+  if (state.kind === 'brand') {
+    const L = cat.list.includes(state.active) ? cat.list : CATALOG.map(x => x.id);
+    const id = L[(L.indexOf(state.active) + d + L.length) % L.length]; state.active = id;
+    showModal(brandHTML(brandById[id]), 'is-detail'); three && three.focus(id, null, true);
+    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+    return;
+  }
   const i = state.list.indexOf(state.active), n = state.list.length;
   const id = state.list[(i + d + n) % n]; state.active = id;
   showModal(detailHTML(byId[id]), 'is-detail');
@@ -1622,20 +1803,30 @@ function openAbout() {
 }
 function closeModal(resetNav = true) {
   if (!modal.classList.contains('open')) return;
-  modal.classList.remove('open'); state.active = null;
+  modal.classList.remove('open'); state.active = null; state.kind = null;
+  try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
   if (resetNav) setNav('explore');
 }
 function explore() { closeModal(); closeDrawer(); setNav('explore'); three && three.preset('overview'); setPresetRadio('overview'); }
 function setPresetRadio(k) { const r = $(`input[name=view][value=${k}]`); if (r) r.checked = true; }
 
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-act],[data-open],[data-nav]'); if (!t) { if (e.target === modal) closeModal(); return; }
+  const t = e.target.closest('[data-act],[data-open],[data-nav],[data-brand],[data-pi]'); if (!t) { if (e.target === modal) closeModal(); return; }
   if (t.dataset.open) return openDetail(t.dataset.open);
+  if (t.dataset.brand) return openBrand(t.dataset.brand);
+  if (t.dataset.pi !== undefined && state.kind === 'brand') {
+    const b = brandById[state.active], p = b && b.products[+t.dataset.pi]; if (!p) return;
+    $$('.prod-item', modal).forEach(x => x.classList.toggle('on', x === t));
+    t.querySelector('.pd')?.classList.remove('clamp');
+    const img = $('#dt-img', modal); if (img && p.photo) img.src = p.photo;
+    return;
+  }
   if (t.dataset.nav) {
     const k = t.dataset.nav;
     if (!state.entered) return;
     if (k === 'explore') return explore();
     if (k === 'about') return openAbout();
+    if (k === 'catalog') return state.panel === 'catalog' ? closeDrawer() : openCatalog();
     return state.panel === k ? closeDrawer() : openDrawer(k);
   }
   const a = t.dataset.act;
@@ -1645,9 +1836,17 @@ document.addEventListener('click', e => {
   if (a === 'next') stepDetail(1);
   if (a === 'explore') explore();
   if (a === 'view-in-room') { closeModal(); }
+  if ((a === 'inq-wa' || a === 'inq-copy') && state.kind === 'brand') {
+    const b = brandById[state.active], ok = $('#iq-ok', modal);
+    if (a === 'inq-wa') { window.open(`https://wa.me/${t.dataset.wa}?text=${encodeURIComponent(inquiryText(b, true))}`, '_blank', 'noopener'); return; }
+    const txt = inquiryText(b, false);
+    const fb = () => { const ta = $('#iq-msg', modal); ta.value = txt; ta.style.height = '180px'; ta.select(); ok.textContent = 'Select the text above and copy it manually.'; };
+    try { navigator.clipboard.writeText(txt).then(() => { ok.textContent = 'Copied — paste it into your email to the company.'; }, fb); } catch (err) { fb(); }
+  }
 });
 modal.addEventListener('pointerdown', e => { if (e.target === modal) closeModal(); });
 document.addEventListener('keydown', e => {
+  if (/INPUT|TEXTAREA/.test(e.target.tagName)) return;
   if (e.key === 'Escape') { if (modal.classList.contains('open')) closeModal(); else if (state.panel) closeDrawer(); }
   if (modal.classList.contains('is-open-detail') || (state.active && modal.classList.contains('open'))) {
     if (e.key === 'ArrowRight') stepDetail(1);
@@ -1704,7 +1903,7 @@ async function init3D() {
   const manager = new THREE.LoadingManager();
   const loader = new THREE.TextureLoader(manager);
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
-  const total = PRODUCTS.length + 1; let done = 0;
+  const total = PRODUCTS.length + 1 + CATALOG.length; let done = 0;
   const load = url => new Promise(res => loader.load(url, t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso; done++; setProgress(0.1 + 0.85 * done / total); res(t); }, undefined, () => { done++; res(null); }));
   const texs = await Promise.all([...PRODUCTS.map(p => load(p.texture)), load(SHOWROOM.aboutImage)]);
 
@@ -1721,61 +1920,126 @@ async function init3D() {
   room.interactives.forEach(it => Object.assign(it.mesh.userData, { action: it.action, label: it.label, sub: it.sub }));
   room.root.traverse(o => { if (o.isMesh && o.material.transparent) o.raycast = () => {}; });
 
-  // controls
-  const controls = new OrbitControls(camera, canvas);
-  Object.assign(controls, { enableDamping: true, dampingFactor: 0.08, rotateSpeed: 0.5, zoomSpeed: 0.8, panSpeed: 0.7, minDistance: 0.35, maxDistance: 6.5, maxPolarAngle: Math.PI * 0.62, minPolarAngle: Math.PI * 0.15, screenSpacePanning: true });
-  const B = room.bounds, cl = (v, a, b) => Math.max(a, Math.min(b, v));
-  const clampCam = () => {
-    const p = camera.position, t = controls.target;
-    p.x = cl(p.x, -B.x, B.x); p.z = cl(p.z, B.zMin, B.zMax); p.y = cl(p.y, B.yMin, B.yMax);
-    t.x = cl(t.x, -B.x - 0.28, B.x + 0.28); t.z = cl(t.z, B.zMin - 0.28, B.zMax + 0.28); t.y = cl(t.y, 0.2, 2.9);
-  };
-  const intro = room.intro;
-  camera.position.set(...intro.pos); controls.target.set(...intro.target); camera.lookAt(controls.target);
+  // ---- catalogue tiles: craft & fashion on the east feature wall, food & beverage on the west wall ----
+  const ctex = await Promise.all(CATALOG.map(b => load(thumbOf(b))));
+  const tileSlots = { E: [], W: [] };
+  const COLS = { grey: [-0.235, 0.235], dark: [0], slat: [-0.235, 0.235] };
+  room.wallPanels.forEach(wp => {
+    const cols = COLS[wp.type]; if (!cols) return;
+    if (wp.side === 'E' && wp.type === 'slat') return;                 // keep the gold-leaf feature panel clear
+    if (wp.side === 'W' && wp.zc + wp.w / 2 > 4.4) return;              // keep the brand information panel clear
+    const rows = wp.side === 'E' ? [2.47, 2.02, 1.57, 1.12] : [2.47, 2.02, 1.57, 1.12, 0.67];
+    const dir = wp.side === 'E' ? 1 : -1;
+    rows.forEach(y => cols.forEach(x => {
+      const a = new THREE.Object3D(); a.name = 'slot_tile'; a.position.set(x, y, 0.05);
+      a.userData = { maxW: 0.33, maxH: 0.39, zone: wp.side === 'E' ? 'Feature Wall · Kriya & Fashion' : 'Dinding Barat · Makanan & Minuman' };
+      wp.g.add(a); tileSlots[wp.side].push({ a, z: wp.zc + dir * x, y });
+    }));
+  });
+  ['E', 'W'].forEach(k => tileSlots[k].sort((p, q) => p.z - q.z || q.y - p.y));
+  const craftB = CATALOG.filter(b => b.section === 'craft'), foodB = CATALOG.filter(b => b.section !== 'craft');
+  const assign = [];
+  craftB.forEach((b, i) => assign.push([b, tileSlots.E[i] || tileSlots.W[foodB.length + i - tileSlots.E.length]]));
+  foodB.forEach((b, i) => assign.push([b, tileSlots.W[i] || tileSlots.E[craftB.length + i - tileSlots.W.length]]));
+  assign.forEach(([b, sl]) => {
+    const tex = ctex[CATALOG.indexOf(b)]; if (!sl || !tex) { console.warn('No wall slot/tile for', b.id); return; }
+    const d = makeDisplay(tex, sl.a, { style: 'tile' }); d.userData.bid = b.id; displays[b.id] = d; dispList.push(d);
+  });
 
-  let tween = null;
+  // ---- first-person camera ----
+  const B = room.bounds, cl = (v, a, b) => Math.max(a, Math.min(b, v)), EYE = 1.6;
+  const fp = { x: 0, z: 0, yaw: 0, pitch: 0 };
+  camera.rotation.order = 'YXZ';
+  const aim = (x, z, t) => { const dx = t.x - x, dy = t.y - EYE, dz = t.z - z; return { yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(dy, Math.hypot(dx, dz)) }; };
   const V = a => Array.isArray(a) ? new THREE.Vector3(...a) : a.clone();
-  function flyTo(pos, target, dur = 1.3, done) {
-    const p1 = V(pos); p1.x = cl(p1.x, -B.x, B.x); p1.z = cl(p1.z, B.zMin, B.zMax); p1.y = cl(p1.y, B.yMin, B.yMax);
-    if (tween) clearTimeout(tween.timer);
-    tween = { p0: camera.position.clone(), t0: controls.target.clone(), p1, t1: V(target), start: performance.now(), dur: dur * 1000, done, lift: Math.min(0.45, camera.position.distanceTo(p1) * 0.08) };
-    tween.timer = setTimeout(finishTween, dur * 1000 + 400);
-    controls.enabled = false;
+  const applyCam = () => { camera.position.set(fp.x, EYE, fp.z); camera.rotation.set(fp.pitch, fp.yaw, 0); };
+  { const ip = V(room.intro.pos), a = aim(ip.x, ip.z, V(room.intro.target)); Object.assign(fp, { x: ip.x, z: ip.z }, a); applyCam(); }
+
+  // colliders: footprints of the furniture, built from the room itself
+  const RECTS = [], SKIP = /^(floor|wall_|skirting|ceiling|soffit|cove|downlight|ac_grille|panel_|brand_panel|brand_frame|rug|lights|gold_leaf|slot_|brand_info)/;
+  room.root.updateMatrixWorld(true);
+  room.root.children.forEach(c => {
+    if (c.isLight || SKIP.test(c.name || '')) return;
+    const bx = new THREE.Box3().setFromObject(c);
+    if (bx.isEmpty() || bx.min.y > 1.0 || bx.max.y < 0.15) return;
+    RECTS.push({ x0: bx.min.x, x1: bx.max.x, z0: bx.min.z, z1: bx.max.z });
+  });
+  function resolve(p) {
+    const R = 0.22;
+    for (const q of RECTS) {
+      const x0 = q.x0 - R, x1 = q.x1 + R, z0 = q.z0 - R, z1 = q.z1 + R;
+      if (p.x > x0 && p.x < x1 && p.z > z0 && p.z < z1) { const m = Math.min(p.x - x0, x1 - p.x, p.z - z0, z1 - p.z); if (m === p.x - x0) p.x = x0; else if (m === x1 - p.x) p.x = x1; else if (m === p.z - z0) p.z = z0; else p.z = z1; }
+    }
+    p.x = cl(p.x, -B.x, B.x); p.z = cl(p.z, B.zMin, B.zMax);
   }
-  function finishTween() {
-    if (!tween) return; const tw = tween; tween = null; clearTimeout(tw.timer);
-    camera.position.copy(tw.p1); controls.target.copy(tw.t1); controls.enabled = true; controls.update(); tw.done && tw.done();
+  const angD = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
+  let tween = null;
+  function flyTo(pos, target, dur = 1.3, done, keepLook) {
+    const p1 = V(pos); p1.x = cl(p1.x, -B.x, B.x); p1.z = cl(p1.z, B.zMin, B.zMax);
+    const a = keepLook ? { yaw: fp.yaw, pitch: fp.pitch } : aim(p1.x, p1.z, V(target));
+    tween = { f: { ...fp }, t: { x: p1.x, z: p1.z, yaw: a.yaw, pitch: cl(a.pitch, -1.2, 1.2) }, start: performance.now(), dur: dur * 1000, done };
   }
+  function walkTo(pt) { const p = { x: pt.x, z: pt.z }; resolve(p); flyTo([p.x, EYE, p.z], null, Math.max(0.35, Math.hypot(p.x - fp.x, p.z - fp.z) / 3), null, true); }
   function productView(id) {
     const d = displays[id], photo = d.userData.photo;
-    const c = photo.getWorldPosition(new THREE.Vector3()), n = new THREE.Vector3(); d.parent.getWorldDirection(n);
-    const [w, h] = d.userData.size, f = Math.tan(camera.fov * Math.PI / 360);
-    const dist = Math.max(0.8, Math.max(h, w / camera.aspect) / 2 / f * 2.6 + 0.2);
-    const pos = c.clone().addScaledVector(n, dist); pos.y += 0.14;
-    return { pos, target: c };
+    const c = photo.getWorldPosition(new THREE.Vector3()), n = new THREE.Vector3(); d.parent.getWorldDirection(n); n.y = 0; n.normalize();
+    const dist = d.userData.style === 'tile' ? (mobile ? 1.75 : 1.3) : (mobile ? 1.45 : 1.1);
+    return { pos: c.clone().addScaledVector(n, dist), target: c };
   }
 
-  // picking
-  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let pickPending = false, ptr = { x: 0, y: 0 }, down = null;
+  // input: drag to look, WASD / arrows, touch joystick, click the floor to walk, wheel to step
+  const keys = {};
+  const typing = e => /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
+  addEventListener('keydown', e => { if (typing(e) || !state.entered || modal.classList.contains('open')) return; keys[e.code] = true; if (/^Arrow|Space/.test(e.code)) e.preventDefault(); });
+  addEventListener('keyup', e => { keys[e.code] = false; });
+  addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+  const joyEl = $('#joy'), knob = $('#knob'), joyHint = $('#joyhint');
+  if (mobile) document.body.classList.add('touch');
+  const joy = { id: null, cx: 0, cy: 0, x: 0, y: 0 }, look = { id: null, sx: 0, sy: 0, lx: 0, ly: 0, t: 0, drag: false };
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let pickPending = false, ptr = { x: 0, y: 0 };
+  const FLOORS = new Set(['floor', 'rug_grey', 'rug_patterned']);
   function pick(x, y) {
     ndc.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(ndc, camera);
     const hit = ray.intersectObject(room.root, true)[0]; if (!hit) return null;
-    for (let o = hit.object; o; o = o.parent) { if (o.userData.pid || o.userData.action) return o; if (o === room.root) break; }
+    for (let o = hit.object; o; o = o.parent) { if (o.userData.pid || o.userData.bid || o.userData.action) return o; if (o === room.root) break; }
+    if (FLOORS.has(hit.object.name)) return { floor: true, point: hit.point, userData: {} };
     return null;
   }
-  const hitKey = o => o ? (o.userData.pid || o.userData.action) : null;
-  canvas.addEventListener('pointermove', e => { ptr = { x: e.clientX, y: e.clientY }; if (e.pointerType === 'mouse') pickPending = true; });
-  canvas.addEventListener('pointerleave', () => { state.hovered = null; hideTip(); canvas.style.cursor = ''; });
-  canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, t: performance.now() }; $('#hint')?.classList.add('gone'); });
-  canvas.addEventListener('pointerup', e => {
-    if (!down || tween || !state.entered) return;
-    const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y), dt = performance.now() - down.t; down = null;
-    if (moved > 6 || dt > 650) return;
+  const hitKey = o => o && !o.floor ? (o.userData.pid || o.userData.bid || o.userData.action) : null;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.14, 0.2, 40), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.8, depthWrite: false, toneMapped: false }));
+  ring.rotation.x = -Math.PI / 2; ring.visible = false; ring.raycast = () => {}; scene.add(ring);
+  const uiOpen = () => modal.classList.contains('open');
+  canvas.addEventListener('pointerdown', e => {
+    $('#hint')?.classList.add('gone'); if (!state.entered) return; canvas.focus?.();
+    if (e.pointerType === 'touch' && joy.id === null && e.clientX < innerWidth * 0.45 && e.clientY > innerHeight * 0.45) {
+      Object.assign(joy, { id: e.pointerId, cx: e.clientX, cy: e.clientY, x: 0, y: 0 }); joyEl.style.left = e.clientX + 'px'; joyEl.style.top = e.clientY + 'px'; joyEl.style.display = 'block'; knob.style.transform = ''; joyHint.classList.remove('on'); tween = null; canvas.setPointerCapture(e.pointerId); return;
+    }
+    if (look.id === null) { Object.assign(look, { id: e.pointerId, sx: e.clientX, sy: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), drag: false }); canvas.setPointerCapture(e.pointerId); }
+  });
+  canvas.addEventListener('pointermove', e => {
+    ptr = { x: e.clientX, y: e.clientY }; if (e.pointerType === 'mouse') pickPending = true;
+    if (e.pointerId === joy.id) { let dx = e.clientX - joy.cx, dy = e.clientY - joy.cy; const d = Math.hypot(dx, dy), m = 48; if (d > m) { dx = dx / d * m; dy = dy / d * m; } joy.x = dx / m; joy.y = dy / m; knob.style.transform = `translate(${dx}px,${dy}px)`; return; }
+    if (e.pointerId === look.id) {
+      if (!look.drag && Math.hypot(e.clientX - look.sx, e.clientY - look.sy) > 6) { look.drag = true; tween = null; canvas.style.cursor = 'grabbing'; }
+      if (look.drag) { const k = e.pointerType === 'touch' ? 0.005 : 0.0036; fp.yaw += (e.clientX - look.lx) * k; fp.pitch = cl(fp.pitch + (e.clientY - look.ly) * k, -1.2, 1.2); }
+      look.lx = e.clientX; look.ly = e.clientY;
+    }
+  });
+  const endPtr = e => {
+    if (e.pointerId === joy.id) { joy.id = null; joy.x = joy.y = 0; joyEl.style.display = 'none'; return; }
+    if (e.pointerId !== look.id) return;
+    const wasDrag = look.drag; look.id = null; look.drag = false; canvas.style.cursor = '';
+    if (wasDrag || e.type !== 'pointerup' || performance.now() - look.t > 650 || !state.entered || uiOpen()) return;
     const o = pick(e.clientX, e.clientY); if (!o) return;
+    if (o.floor) return walkTo(o.point);
     if (o.userData.pid) openDetail(o.userData.pid);
+    else if (o.userData.bid) openBrand(o.userData.bid);
     else if (o.userData.action === 'about') openAbout();
     else if (o.userData.action === 'all') openDrawer('all');
-  });
+  };
+  canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
+  canvas.addEventListener('pointerleave', () => { state.hovered = null; hideTip(); ring.visible = false; canvas.style.cursor = ''; });
+  canvas.addEventListener('wheel', e => { if (!state.entered || uiOpen()) return; e.preventDefault(); tween = null; const st = cl(-e.deltaY * 0.004, -0.6, 0.6); fp.x += -Math.sin(fp.yaw) * st; fp.z += -Math.cos(fp.yaw) * st; resolve(fp); }, { passive: false });
 
   function resize() { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight, false); }
   addEventListener('resize', resize);
@@ -1786,35 +2050,51 @@ async function init3D() {
   function loop(now) {
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (expo.dur) { const k = Math.min(1, (now - expo.start) / expo.dur); renderer.toneMappingExposure = expo.from + (1.12 - expo.from) * k; if (k >= 1) expo.dur = 0; }
+    // walking
+    let f = 0, sd = 0, turn = 0;
+    if (state.entered && !uiOpen()) {
+      if (keys.KeyW || keys.ArrowUp) f += 1; if (keys.KeyS || keys.ArrowDown) f -= 1; if (keys.KeyA) sd -= 1; if (keys.KeyD) sd += 1;
+      if (keys.ArrowLeft || keys.KeyQ) turn += 1; if (keys.ArrowRight || keys.KeyE) turn -= 1;
+      f -= joy.y; sd += joy.x;
+    }
+    if (f || sd || turn) tween = null;
     if (tween) {
-      const k = Math.min(1, (now - tween.start) / tween.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-      camera.position.lerpVectors(tween.p0, tween.p1, e); camera.position.y += Math.sin(Math.PI * e) * tween.lift;
-      controls.target.lerpVectors(tween.t0, tween.t1, e); camera.lookAt(controls.target);
-      if (k >= 1) finishTween();
-    } else { controls.update(); clampCam(); }
+      const k = Math.min(1, (now - tween.start) / tween.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2, a = tween.f, b = tween.t;
+      fp.x = a.x + (b.x - a.x) * e; fp.z = a.z + (b.z - a.z) * e; fp.yaw = a.yaw + angD(a.yaw, b.yaw) * e; fp.pitch = a.pitch + (b.pitch - a.pitch) * e;
+      if (k >= 1) { const d = tween.done; tween = null; d && d(); }
+    } else {
+      fp.yaw += turn * 1.7 * dt;
+      const len = Math.hypot(f, sd);
+      if (len > 0) { const sp = (keys.ShiftLeft || keys.ShiftRight ? 3.4 : 2.0) * dt, nf = f / Math.max(1, len), ns = sd / Math.max(1, len);
+        fp.x += (-Math.sin(fp.yaw) * nf + Math.cos(fp.yaw) * ns) * sp; fp.z += (-Math.cos(fp.yaw) * nf - Math.sin(fp.yaw) * ns) * sp; resolve(fp); }
+    }
+    applyCam();
 
-    if (pickPending && state.entered && !tween && !modal.classList.contains('open')) {
+    if (pickPending && state.entered && !tween && !uiOpen() && look.id === null) {
       pickPending = false;
       const o = pick(ptr.x, ptr.y), k = hitKey(o);
-      state.hovered = k; canvas.style.cursor = k ? 'pointer' : '';
-      if (o) {
-        const p = byId[o.userData.pid];
-        showTip(p ? `<span class="tip-k">${esc(brandOf(p).split(' — ')[0])}</span><span class="tip-t">${esc(p.name)}</span>` : `<span class="tip-k">${esc(o.userData.label)}</span><span class="tip-t">${esc(o.userData.sub)}</span>`, ptr.x, ptr.y);
+      state.hovered = k; canvas.style.cursor = k ? 'pointer' : (o && o.floor ? 'crosshair' : '');
+      ring.visible = !!(o && o.floor); if (ring.visible) ring.position.set(o.point.x, o.point.y + 0.01, o.point.z);
+      if (o && !o.floor) {
+        const p = byId[o.userData.pid], b = brandById[o.userData.bid];
+        if (b) { const p0 = b.products[0] || {}; showTip(`<span class="tip-k">${esc(SEC[b.section] || '')} · ${perLabel(b.period)}</span><span class="tip-t">${esc(b.brand)}</span><span class="tip-k" style="letter-spacing:.04em;text-transform:none">${esc(p0.name || '')}${b.products.length > 1 ? ' +' + (b.products.length - 1) : ''} · FOB ${esc(fob(p0.fob))} · MOQ ${esc(p0.moq || 'on request')}</span>`, ptr.x, ptr.y); }
+        else showTip(p ? `<span class="tip-k">${esc(brandOf(p).split(' — ')[0])}</span><span class="tip-t">${esc(p.name)}</span>` : `<span class="tip-k">${esc(o.userData.label)}</span><span class="tip-t">${esc(o.userData.sub)}</span>`, ptr.x, ptr.y);
       } else hideTip();
-    } else if (modal.classList.contains('open') && state.hovered) { state.hovered = null; hideTip(); canvas.style.cursor = ''; }
+    } else if ((uiOpen() || look.drag) && (state.hovered || ring.visible)) { state.hovered = null; hideTip(); ring.visible = false; canvas.style.cursor = look.drag ? 'grabbing' : ''; }
 
     for (const d of dispList) {
-      const u = d.userData, key = u.pid || u.action;
+      const u = d.userData, key = u.pid || u.bid || u.action;
       const tgt = key && (state.hovered === key || state.active === key) ? 1 : 0;
       if (Math.abs(tgt - u.hover) < 0.001 && !u.dirty) continue;
       u.hover += (tgt - u.hover) * Math.min(1, dt * 9);
-      d.scale.setScalar(1 + u.hover * 0.035);
+      d.scale.setScalar(1 + u.hover * (u.style === 'tile' ? 0.08 : 0.035));
       u.frameMat.emissiveIntensity = u.hover * 0.7;
       const c = 0.86 + u.hover * 0.14; u.photoMat.color.setRGB(c, c, c);
       if (u.style === 'stand') u.panel.position.z = -0.02 + u.hover * 0.015;
+      if (u.style === 'tile') d.position.z = u.hover * 0.04;
     }
     renderer.render(scene, camera);
-    if (dbg) { fc++; if (now - ft > 1000) { dbg.textContent = `fps ${fc} · lost ${renderer.getContext().isContextLost()} · calls ${renderer.info.render.calls}`; fc = 0; ft = now; } }
+    if (dbg) { fc++; if (now - ft > 1000) { dbg.textContent = `fps ${fc} · calls ${renderer.info.render.calls} · ${fp.x.toFixed(2)},${fp.z.toFixed(2)}`; fc = 0; ft = now; } }
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
@@ -1822,14 +2102,15 @@ async function init3D() {
   three = {
     enter() {
       expo = { from: 0.25, start: performance.now(), dur: 1600 };
-      const o = room.presets.overview; flyTo(o.pos, o.target, 3.0, () => $('#hint')?.classList.add('on'));
-      setTimeout(() => $('#hint')?.classList.add('gone'), 14000);
+      const deep = decodeURIComponent(location.hash.slice(1));
+      const o = room.presets.overview;
+      flyTo(o.pos, o.target, 3.0, () => { $('#hint')?.classList.add('on'); if (mobile) joyHint.classList.add('on'); if (brandById[deep]) openBrand(deep); else if (byId[deep]) openDetail(deep); });
+      setTimeout(() => { $('#hint')?.classList.add('gone'); joyHint.classList.remove('on'); }, 14000);
     },
     preset(k) { const p = room.presets[k]; if (p) flyTo(p.pos, p.target, 1.5); },
-    focus(id, done, quick) { if (!displays[id]) return done && done(); const v = productView(id); flyTo(v.pos, v.target, quick ? 0.9 : 1.15, done); },
+    focus(id, done, quick) { if (!displays[id]) return done && done(); const v = productView(id); flyTo(v.pos, v.target, quick ? 0.9 : 1.2, done); },
   };
-  window.__showroom = { camera, controls, scene, renderer, flyTo, three, snap() { renderer.render(scene, camera); let im = document.getElementById('__snap'); if (!im) { im = document.createElement('img'); im.id = '__snap'; im.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;z-index:1;pointer-events:none'; document.body.appendChild(im); } im.src = canvas.toDataURL('image/jpeg', 0.9); }, unsnap() { document.getElementById('__snap')?.remove(); },
-    view(k) { const p = typeof k === 'string' ? (displays[k] ? productView(k) : room.presets[k]) : k; tween = null; camera.position.copy(V(p.pos)); controls.target.copy(V(p.target)); controls.update(); renderer.toneMappingExposure = 1.12; expo.dur = 0; renderer.render(scene, camera); } };
+  window.__showroom = { camera, scene, renderer, flyTo, three, fp, RECTS, displays };
   ready('Ruangan siap');
 }
 
