@@ -11,12 +11,14 @@ Two people maintain it, each through their own Claude account. Every change must
 ## Files (since Nov 2026: "Ruang Mendag" design)
 
 - `index.html`: the main showroom. It combines the "Ruang Mendag" room design with first-person walking and the full PPPB catalogue. Everything lives in its `<script type="module">`:
-  - `PRODUCTS`: the 13 products physically displayed in Ruang Mendag (on tables and consoles). `CAT_LINK` connects six of them to their catalogue brand, so their detail view links to contacts, FOB and MOQ.
+  - Division of work: the **room design** (Ruang Mendag) is Adluyana's; the **product content** is the PPPB catalogue (`data/catalog.js`) kept by the other owner.
+  - **Year choice**: before entering, the visitor picks **PPPB 2025** or **PPPB 2026** (`applyYear()`); a top-bar button switches year. Everything below follows the selected year: `PRODUCTS` (built by `productsFor()` from the catalogue), `CATALOG` (that year's brands; `CATALOG_ALL` holds all 105), the wall tiles, the brand panel and the Katalog drawer.
+  - `PRODUCTS`: every product of the selected year. Those listed in `data/pajangan.js` stand on the 13 table/console slots (`featured`, `table-1a/1b/2a/2b`, `side-1`, `nest-a/b`, `gunungan-1..3`, `console-1/2`) and are marked "Featured". **Edit `data/pajangan.js` to change what stands on the tables.**
   - `buildRoom()`: the room. Its size is 7.2 m (x) × 13.5 m (z) × 3.0 m, with the branding wall at −z and the gunungan console at +z. It returns `wallPanels`, the panel runs on the east and west walls.
   - Catalogue tiles (`style: 'tile'` in `makeDisplay`) hang on those wall panels:
     - Craft & Fashion: the east feature wall, on the grey and dark panels, 4 rows. The ikat and gold-leaf panels stay clear.
     - Food & Beverage: the west wall, 5 rows. The area around the brand information panel stays clear.
-    - Each tile has `userData.bid` (the brand id). Within each wall, 2026 brands come first.
+    - Each tile has `userData.bid` (the brand id). Tiles are rebuilt by `setYearDisplays()` when the year changes.
   - First-person controls replace OrbitControls:
     - Eye height is 1.6 m.
     - Desktop: drag to look, WASD or the arrow keys to walk (Shift to run), Q and E to turn, the mouse wheel to step, and a click on the floor or rugs to walk there.
