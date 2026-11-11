@@ -1550,9 +1550,7 @@ function closeDrawer() { drawer.classList.remove('open'); state.panel = null; th
 
 /* ---------- Mode Atur Pajangan (?atur) ---------- */
 // Pilih meja → tambah/lepas produk. Muat atau tidaknya dihitung dari ukuran model 3D.
-// Produk yang dilepas kembali ke rak showcase. Simpan → data/pajangan.js di GitHub (butuh kunci GitHub)
-// atau unduh file-nya. Susunan yang belum disimpan tetap ada di browser ini.
-const GH = { repo: 'pilihanbusan/ruang-tamu', path: 'data/pajangan.js', key: 'ruang-mendag-gh-token' };
+// Produk yang dilepas kembali ke rak showcase. Simpan = unduh data/pajangan.js, lalu pengelola menyimpannya ke repo (Cloudflare tayang otomatis). Susunan yang belum disimpan tetap ada di browser ini.
 const at = { table: 'featured', q: '' };
 const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
@@ -1590,27 +1588,6 @@ function pajanganJS(data) {
   });
   lines.push('};', ''); return lines.join('\n');
 }
-async function saveGitHub() {
-  let token = lsGet(GH.key) || ($('#at-token') && $('#at-token').value.trim());
-  if (!token) { toast('Isi dulu kunci GitHub di bagian "Pengaturan simpan".'); const d = $('#at-set'); if (d) d.open = true; return; }
-  lsSet(GH.key, token);
-  const btn = $('[data-act=at-save]'); if (btn) { btn.disabled = true; btn.lastChild.textContent = 'Menyimpan…'; }
-  try {
-    const url = `https:/${'/'}api.github.com/repos/${GH.repo}/contents/${GH.path}`, H = { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json' };
-    const cur = await fetch(url + '?ref=main', { headers: H }); if (!cur.ok) throw new Error('baca ' + cur.status);
-    const { sha } = await cur.json(), text = pajanganJS(PAJ.cur);
-    const body = { message: 'Atur pajangan lewat Mode Atur (PPPB ' + state.year + ')', content: btoa(unescape(encodeURIComponent(text))), sha, branch: 'main' };
-    const put = await fetch(url, { method: 'PUT', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    if (!put.ok) throw new Error('simpan ' + put.status);
-    PAJ.saved = JSON.parse(JSON.stringify(PAJ.cur)); saveDraft();
-    toast('Tersimpan ke GitHub. Situs publik diperbarui sekitar 1 menit lagi.', 5000);
-  } catch (e) {
-    console.error(e); const m = String(e.message || e);
-    toast(/40[13]/.test(m) ? 'Kunci GitHub ditolak. Periksa kunci di "Pengaturan simpan".' : 'Gagal menyimpan (' + m + '). Coba lagi atau pakai "Unduh file".', 6000);
-    if (/40[13]/.test(m)) lsSet(GH.key, null);
-  }
-  openAtur();
-}
 function downloadPajangan() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([pajanganJS(PAJ.cur)], { type: 'text/javascript' })); a.download = 'pajangan.js'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
 function openAtur(table = at.table) {
   if (!ATUR) return;
@@ -1638,15 +1615,10 @@ function openAtur(table = at.table) {
     <div class="at-foot">
       <p class="${dirty() ? 'at-dirty' : 'text-muted'}">${dirty() ? '● Ada perubahan yang belum disimpan' : 'Semua perubahan sudah tersimpan'}</p>
       <div class="at-btns">
-        <button class="btn btn-primary blueprint" data-act="at-save" ${dirty() ? '' : 'disabled'}>${corners}<span>Simpan</span></button>
-        <button class="btn btn-secondary" data-act="at-download">Unduh file</button>
+        <button class="btn btn-primary" data-act="at-download">Unduh file</button>
         <button class="btn btn-secondary" data-act="at-reset" ${dirty() ? '' : 'disabled'}>Batalkan</button>
       </div>
-      <details id="at-set"><summary>Pengaturan simpan</summary>
-        <p class="text-muted">Tombol Simpan menulis <code>data/pajangan.js</code> di GitHub. Butuh kunci GitHub (fine-grained token) dengan izin <b>Contents: Read and write</b> untuk repo <code>${GH.repo}</code>. Kunci hanya disimpan di browser ini.</p>
-        <input id="at-token" class="input" type="password" placeholder="${lsGet(GH.key) ? 'Kunci tersimpan di browser ini' : 'github_pat_…'}">
-        ${lsGet(GH.key) ? '<button class="btn btn-secondary btn-sm" data-act="at-forget">Hapus kunci dari browser ini</button>' : ''}
-      </details>
+      <p class="text-muted">Untuk menyimpan: tekan <b>Unduh file</b>, lalu kirim <code>pajangan.js</code> ke pengelola situs untuk disimpan ke GitHub. Situs ter-update otomatis.</p>
     </div>
     </div>`;
   drawer.classList.add('open'); $('.at-body', drawer).scrollTop = keep;
@@ -1764,10 +1736,8 @@ document.addEventListener('click', e => {
   if (a === 'at-add') { if (moveTo(t.dataset.p, at.table)) toast('Ditaruh di ' + TABLES.find(x => x.id === at.table).label); openAtur(); }
   if (a === 'at-remove') { moveTo(t.dataset.p, null); openAtur(); }
   if (a === 'at-look') { three && three.lookTable(at.table); }
-  if (a === 'at-save') saveGitHub();
   if (a === 'at-download') downloadPajangan();
   if (a === 'at-reset') { if (confirmReset()) { PAJ.cur = JSON.parse(JSON.stringify(PAJ.saved)); saveDraft(); relayout(); openAtur(); } }
-  if (a === 'at-forget') { lsSet(GH.key, null); openAtur(); }
   if (a === 'at-move') { const sel = $('#at-move'); if (sel) { const ok = moveTo(state.active, sel.value || null); if (ok) toast(sel.value ? 'Dipindah ke ' + TABLES.find(x => x.id === sel.value).label : 'Dikembalikan ke rak'); showModal(detailHTML(byId[state.active]), 'is-detail'); } }
 });
 modal.addEventListener('pointerdown', e => { if (e.target === modal) closeModal(); });
