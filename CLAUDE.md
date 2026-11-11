@@ -4,7 +4,7 @@ Read this before changing anything in this repo. It explains how the project is 
 
 ## What this is
 
-A first-person virtual exhibition: an Indonesian living room, styled like an IKEA showroom, that international buyers walk through to view local export products. It is a static site on GitHub Pages at https://pilihanbusan.github.io/ruang-tamu. There is no build step and no bundler. `index.html` uses three.js 0.184 as ES modules from `vendor/three/` (through an import map). `katalog.html` still uses three.js r128 from cdnjs as a global `THREE`.
+A first-person virtual exhibition: an Indonesian living room, styled like an IKEA showroom, that international buyers walk through to view local export products. It is a static site served by Cloudflare Pages at https://ruang-mendag.pages.dev (connected to this repo, deploys `main` automatically), with GitHub Pages at https://pilihanbusan.github.io/ruang-tamu as a backup. There is no build step and no bundler. `index.html` uses three.js 0.184 as ES modules from `vendor/three/` (through an import map). `katalog.html` still uses three.js r128 from cdnjs as a global `THREE`.
 
 Two people maintain it, each through their own Claude account. Every change must leave the site working for buyers.
 
@@ -17,12 +17,15 @@ Two people maintain it, each through their own Claude account. Every change must
   - Desktop: drag to look, WASD or the arrow keys to walk (Shift to run), Q and E to turn, the mouse wheel to step, and a click on the floor or rugs to walk there.
   - Touch: a joystick on the left thumb.
   - Colliders are built automatically from the furniture footprints (`RECTS`). The dock presets fly the walker to fixed viewpoints.
-  - **Every brand of the chosen year** also hangs as a framed tile on the wall panels (`setYearTiles`, `makeDisplay` with `style: 'tile'`, images from `photos/catalog/thumb/`):
-    - Craft & Fashion: the east feature wall, on the grey and dark panels.
-    - Food & Beverage: the west wall.
-    - The ikat panels, the gold-leaf panel and the brand information panel stay clear.
-  - Clicking a tile opens the detail of the brand's first product. Deep links `#<product-id>` and `#<brand-id>` work after the visitor enters.
-- `data/pajangan.js`: which catalogue product stands on each of the 13 display slots (`featured`, `table-1a/1b/2a/2b`, `side-1`, `nest-a/b`, `gunungan-1..3`, `console-1/2`), per year. Edit this file to change what is displayed in the room.
+  - **Products are 3D models, not photos.** Every product of the chosen year is built as a 3D object by `js/produk3d.js` from its spec in `data/model3d.js` and its background-free photo `photos/cut/<product-id>.webp` (used as the pack label, front face or fabric pattern).
+    - `data/model3d.js` is generated: edit `alat/spek_model.py` (shape type `t`, real size in cm, variants `n`, material `m`, manual label crops `LABEL`) and run `python3 alat/buat_model3d.py`. It also takes the dominant colours from the photo.
+    - Shape types include pouch, pillow, box, bar, jar, bottle, tin, cup, tote, handbag, sling, flat, basket, bowl, plate, mat, vase, candle, lamp, chair, shoes, garment, cushion and figure (a cut-out of the real shape). `alat/galeri-model.html?y=2026&k=food` shows them all for checking.
+    - Each model is merged per material (`bake()`) to keep draw calls low on phones.
+  - **Tables** (`surface()` in `buildRoom()`): `featured`, `table-1`, `side-1`, `table-2`, `nest-a`, `nest-b`, `gunungan`, `console`. One table holds several products. `packSurface()` in `js/tata.js` packs them by their real footprint (tallest at the back). A product that does not fit falls back to the shelves.
+  - **Showcase shelves** (`buildShowcase()` in `js/tata.js`) replace the old brand frames: open stacked shelving in front of the grey and dark wall panels. Behind the sofa rows they are wall-mounted from 0.92 m, elsewhere they stand on the floor. The ikat and gold-leaf panels, the reading nook and the brand information panel stay clear. Every product that is not on a table goes on a shelf (`fillShelves()`): craft on the east wall, food on the west wall, eye-level rows first, scaled down when larger than a compartment.
+  - Deep links `#<product-id>` and `#<brand-id>` work after the visitor enters.
+- `data/pajangan.js`: which products stand on which table, per year: `{ '2026': { 'table-1': ['<product-id>', ...], ... } }`. The old one-product-per-slot keys (`table-1a`, `gunungan-2`, …) are still read.
+- **Mode Atur Pajangan**: open the site with `?atur` (for example `https://ruang-mendag.pages.dev/?atur`). An "Atur Pajangan" button appears. Pick a table, then add products ("Taruh") or send them back to the shelves; the product detail also has a "Pajang di" selector. Products that do not fit are refused. Unsaved changes are kept in the browser's localStorage. **Unduh file** downloads `data/pajangan.js`; an owner commits it to `main`. There is deliberately no token or password field on the public site (it can look like phishing to abuse filters).
 - `index.html` (continued): the scene and UI are in its `<script type="module">`. It uses three.js 0.184 as ES modules through an import map that points to `vendor/three/` (no CDN), fonts in `assets/fonts/` and images in `assets/img/`. To change the design, edit it in the design artifact, export a standalone HTML again and unbundle it the same way.
 - `katalog.html`: the previous showroom built around the full PPPB catalogue (105 brands / 204 products). It still uses three.js r128 from cdnjs and the files described below.
 
@@ -56,7 +59,7 @@ The notes below describe `katalog.html` (formerly `index.html`).
 - All UI text must be bilingual. Add every new string to both `T.en` and `T.id`. Buyers see English by default.
 - Product content comes from the official PPPB catalogue. Keep the source note in the panel, which tells buyers to confirm prices and MOQ with the company.
 - The repo owners approved showing the PPPB programme name and the real brands, contacts (including WhatsApp), prices, MOQ and export markets. Do not add other logos or government insignia unless the owners say so explicitly.
-- Do not add analytics, trackers or external requests beyond cdnjs and Google Fonts.
+- Do not add analytics, trackers or external requests beyond cdnjs and Google Fonts. Never add token, password or login fields to the public site.
 
 ## Testing before you push
 
@@ -75,4 +78,4 @@ If headless Chrome or Playwright is available, take screenshots at both sizes. N
 - For small fixes, commit directly to `main` with a clear message, for example "Change accent wall to sage green".
 - For larger changes (a new room, a rework of the layout, new features), use a branch and open a pull request so the other owner can review it first.
 - Keep each commit focused on one thing, so it is easy to revert.
-- GitHub Pages redeploys about 1 minute after a push to `main`.
+- Cloudflare Pages (and GitHub Pages) redeploy about 1–2 minutes after a push to `main`. Batch commits; avoid bursts of many commits, branches or PRs.

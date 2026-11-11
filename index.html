@@ -7,7 +7,8 @@
 {
   "imports": {
     "three": "./vendor/three/three.module.min.js",
-    "three/addons/controls/OrbitControls.js": "./vendor/three/OrbitControls.js"
+    "three/addons/controls/OrbitControls.js": "./vendor/three/OrbitControls.js",
+    "three/addons/utils/BufferGeometryUtils.js": "./vendor/three/BufferGeometryUtils.js"
   }
 }
 </script>
@@ -545,6 +546,29 @@ textarea.input { min-height: 90px; resize: vertical; }
   .h-touch { display: none !important; } body.touch .h-touch { display: inline-flex !important; } body.touch .h-desk { display: none !important; }
   @media (max-width: 980px) { .nb-year .yr-pre { display: none; } .nb-year #yr-label { display: inline; } }
   .dt-note { font-size: 12px; margin: var(--space-3) 0 0; }
+  /* Mode Atur Pajangan */
+  .nb-atur { color: var(--color-accent, #3f6fa3); }
+  .at-tables { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: var(--space-3) 0; }
+  .at-t { position: relative; text-align: left; padding: 8px 10px 10px; border: 1px solid rgba(0,0,0,.12); background: rgba(255,255,255,.6); font: inherit; font-size: 12px; line-height: 1.25; cursor: pointer; overflow: hidden; }
+  .at-t small { display: block; opacity: .65; font-size: 11px; margin-top: 2px; }
+  .at-t i { position: absolute; left: 0; bottom: 0; height: 3px; background: #c9a45c; }
+  .at-t.on { border-color: #1d2d3d; background: #1d2d3d; color: #f2f2f3; }
+  .at-sec { margin: var(--space-3) 0; } .at-sec h6 { margin: 0 0 6px; }
+  .at-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .at-list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+  .at-list li { display: grid; grid-template-columns: 40px 1fr auto; gap: 8px; align-items: center; padding: 4px; background: rgba(255,255,255,.55); border: 1px solid rgba(0,0,0,.06); }
+  .at-list img { width: 40px; height: 40px; object-fit: cover; }
+  .at-list b { display: block; font-size: 12px; font-weight: 600; line-height: 1.2; } .at-list small { font-size: 11px; opacity: .65; }
+  .at-body { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -8px; padding: 0 8px 8px; }
+  .at-foot { padding-top: var(--space-2); border-top: 1px solid rgba(0,0,0,.1); }
+  .at-foot p { font-size: 12px; margin: 0 0 6px; } .at-dirty { color: #a3441f; font-weight: 600; }
+  .at-btns { display: flex; gap: 6px; flex-wrap: wrap; } .at-foot details { margin-top: 8px; font-size: 12px; } .at-foot details .input { width: 100%; margin: 6px 0; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; min-height: 0; }
+  .input { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid rgba(0,0,0,.18); background: #fff; width: 100%; box-sizing: border-box; }
+  .at-detail { display: flex; gap: 8px; align-items: center; margin-top: var(--space-3); padding: 10px; background: rgba(29,45,61,.06); border: 1px dashed rgba(29,45,61,.3); flex-wrap: wrap; }
+  .at-detail label { font-size: 12px; font-weight: 600; } .at-detail select { flex: 1; min-width: 160px; width: auto; }
+  #toast { position: fixed; left: 50%; bottom: 90px; transform: translate(-50%, 20px); background: #1d2d3d; color: #f2f2f3; padding: 10px 16px; font-size: 13px; max-width: min(90vw, 460px); z-index: 60; opacity: 0; pointer-events: none; transition: .25s; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+  #toast.on { opacity: 1; transform: translate(-50%, 0); }
   .dt-actions .btn { text-decoration: none; }
   .in-load { display: flex; flex-direction: column; gap: 6px; min-width: 180px; }
   .in-bar { height: 1px; background: color-mix(in srgb, var(--color-bg) 18%, transparent); overflow: hidden; }
@@ -657,10 +681,13 @@ textarea.input { min-height: 90px; resize: vertical; }
 
 <script src="data/catalog.js"></script>
 <script src="data/pajangan.js"></script>
+<script src="data/model3d.js"></script>
 <script type="module">
 import * as THREE from 'three';
+import { buildProduct } from './js/produk3d.js';
+import { TABLES, LEGACY, packSurface, buildShowcase, fillShelves } from './js/tata.js';
 {
-const { PRODUCTS, SHOWROOM, GROUPS, YEARS, yearStats, setYearData } = (() => {
+const { PRODUCTS, SHOWROOM, GROUPS, YEARS, yearStats, setYearData, PAJ, ATUR, DRAFT_KEY, pajanganFor } = (() => {
 // Showroom text. Products come from data/catalog.js (per year) — see productsFor() below.
 
 const SHOWROOM = {
@@ -685,8 +712,8 @@ const PRODUCTS = [];
 const CAT = window.CATALOG || [];
 const yearStats = y => { const bs = CAT.filter(b => String(b.period).startsWith(y)); return { brands: bs.length, products: bs.reduce((n, b) => n + b.products.length, 0) }; };
 function productsFor(year) {
-  const pick = (window.PAJANGAN || {})[year] || {}, slotOf = {};
-  Object.entries(pick).forEach(([slot, pid]) => { if (pid) slotOf[pid] = slot; });
+  const pick = pajanganFor(year), slotOf = {};
+  Object.entries(pick).forEach(([table, ids]) => ids.forEach(pid => { if (pid) slotOf[pid] = table; }));
   const out = [];
   CAT.filter(b => String(b.period).startsWith(year)).forEach(b => b.products.forEach(q => {
     const spec = [['Dimensi', q.dimension], ['Material', q.material], ['Finishing', q.finishing], ['Berat', q.weight], ['Sertifikasi', q.cert], ['Harga FOB', q.fob ? 'USD ' + String(q.fob).replace(/^\s*(USD|US\$|\$)\s*/i, '') : null], ['MOQ', q.moq], ['Loadability', q.load]].filter(([, v]) => v && String(v).trim());
@@ -702,12 +729,28 @@ function productsFor(year) {
   out.sort((x, y) => (y.featured - x.featured));
   return out;
 }
+// data/pajangan.js: { tahun: { meja: [kode produk, ...] } }. Bentuk lama (satu produk per tempat) tetap terbaca.
+// Di Mode Atur (?atur) susunan yang belum disimpan dibaca dari penyimpanan browser.
+const ATUR = new URLSearchParams(location.search).has('atur');
+const DRAFT_KEY = 'ruang-mendag-pajangan-draft';
+function readDraft() { try { return ATUR ? JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null') : null; } catch { return null; } }
+function normalizePajangan(src) {
+  const out = {};
+  Object.entries(src || {}).forEach(([year, tbl]) => {
+    out[year] = {};
+    Object.entries(tbl || {}).forEach(([k, v]) => { const t = LEGACY[k] || k; (out[year][t] = out[year][t] || []).push(...(Array.isArray(v) ? v : [v]).filter(Boolean)); });
+  });
+  return out;
+}
+const PAJ = { saved: normalizePajangan(window.PAJANGAN), cur: null };
+PAJ.cur = readDraft() || JSON.parse(JSON.stringify(PAJ.saved));
+function pajanganFor(year) { return PAJ.cur[year] || (PAJ.cur[year] = {}); }
 function setYearData(year) {
   PRODUCTS.splice(0, PRODUCTS.length, ...productsFor(year));
   GROUPS.splice(0, GROUPS.length, ...Object.values(SECTION).filter(g => PRODUCTS.some(p => p.group === g)));
 }
 
-return { PRODUCTS, SHOWROOM, GROUPS, YEARS, yearStats, setYearData };
+return { PRODUCTS, SHOWROOM, GROUPS, YEARS, yearStats, setYearData, PAJ, ATUR, DRAFT_KEY, pajanganFor };
 })();
 const { buildRoom, makeDisplay } = (() => {
 // Ruang Mendag — 3D room, furniture and display slots (meters, y-up).
@@ -1080,6 +1123,10 @@ function roomMaterials() {
 function slatMat(w) { return new THREE.MeshStandardMaterial({ name: 'wood_slat_panel', map: rep(MAT.slatTex, w / 0.5, 1), roughness: 0.6 }); }
 
 /* ---------- display units & room pieces ---------- */
+// permukaan meja pajang: { r } meja bundar atau { w, d } meja persegi; +z lokal = arah depan
+function surface(surfs, id, parent, x, y, z, shape, extra = {}) {
+  const a = new THREE.Object3D(); a.name = 'surface_' + id; a.position.set(x, y, z); a.rotation.y = extra.ry || 0; a.userData = { id, maxH: 0.75, ...shape, ...extra }; parent.add(a); surfs[id] = a; return a;
+}
 function slot(slots, id, parent, x, y, z, maxW, maxH, extra = {}) {
   const a = new THREE.Object3D(); a.name = 'slot_' + id; a.position.set(x, y, z); a.rotation.y = extra.ry || 0; a.userData = { maxW, maxH, ...extra }; parent.add(a); slots[id] = a; return a;
 }
@@ -1108,8 +1155,7 @@ function cubeConsole(slots) {
   [0.03, Hc / 2, Hc - 0.015].forEach((y, i) => box(g, 'console_shelf_' + i, L, 0.025, Dp, M, 0, y, 0));
   for (let i = 0; i <= 6; i++) box(g, 'console_div_' + i, 0.025, Hc, Dp, M, -L / 2 + i * L / 6, Hc / 2, 0);
   wovenBowl(g, 'console_basket', 0.12, 0.78, Hc + 0.04, 0);
-  slot(slots, 'console-1', g, -0.5, Hc + 0.04, 0.02, 0.6, 0.5, { zone: 'Konsol Pintu Masuk' });
-  slot(slots, 'console-2', g, 0.2, Hc + 0.04, 0.02, 0.6, 0.5, { zone: 'Konsol Pintu Masuk' });
+  surface(slots.__surf, 'console', g, -0.16, Hc + 0.04, 0.0, { w: 1.5, d: 0.42 }, { zone: 'Konsol Pintu Masuk', maxH: 0.9 });
   shadows(g); return g;
 }
 function gununganWall(slots) {
@@ -1123,7 +1169,7 @@ function gununganWall(slots) {
   };
   tri(1.0, 1.25, -0.62, 0.012, 'gunungan_left'); tri(1.0, 1.25, 0.62, 0.012, 'gunungan_right'); tri(1.35, 1.75, 0, 0.03, 'gunungan_center');
   [-1, 1].forEach((s, i) => box(g, 'carved_tall_panel_' + i, 0.8, 2.55, 0.04, new THREE.MeshStandardMaterial({ name: 'carved_panel', map: rep(MAT.latticeTex, 1.6, 5.6), roughness: 0.6 }), s * 2.3, 1.36, 0.02));
-  [-0.62, 0, 0.62].forEach((x, i) => slot(slots, 'gunungan-' + (i + 1), g, x, 0.79, 0.26, 0.5, 0.56, { zone: 'Konsol Gunungan' }));
+  surface(slots.__surf, 'gunungan', g, 0, 0.79, 0.3, { w: 1.84, d: 0.3 }, { zone: 'Konsol Gunungan', maxH: 1.0 });
   shadows(g); return g;
 }
 function goldLeaves(p, x, y, z, ry) {
@@ -1255,7 +1301,7 @@ function makeDisplay(tex, anchor, { label = null, style = 'stand' } = {}) {
 function buildRoom({ products }) {
   makeMaterials(); roomMaterials();
   const root = new THREE.Group(); root.name = 'RuangMendag';
-  const slots = {}, interactives = [];
+  const slots = {}, interactives = [], surfs = {}; slots.__surf = surfs;
   const CX = 0.75; // centre line of the sofa U / branding wall
 
   // shell
@@ -1340,22 +1386,20 @@ function buildRoom({ products }) {
   });
   [[rowW, Math.PI / 2 - 0.35], [rowE, -Math.PI / 2 + 0.35]].forEach(([x, ry], i) => { const c = frameChair('frame_chair_' + i); c.position.set(x + (i ? -0.1 : 0.1), 0, 1.95); c.rotation.y = ry; root.add(c); });
   const ft1 = coffeeTable(); ft1.position.set(CX, 0, -4.35); ft1.scale.set(0.62, 1, 0.62); root.add(ft1);
-  slot(slots, 'featured', root, CX, 0.467, -4.4, 0.5, 0.64, { zone: 'Featured · Meja Ruang Mendag', featured: true });
+  surface(surfs, 'featured', root, CX, 0.467, -4.35, { r: 0.47 }, { zone: 'Featured · Meja Ruang Mendag', featured: true });
   const sd0 = sideTable('gold_side_0'); sd0.position.set(CX, 0, -3.25); root.add(sd0); vase(root, 'gold_side_vase', 0.06, 0.22, MAT.porcelain, CX, 0.615, -3.25);
   const t1 = roundTable('round_table_1'); t1.position.set(CX, 0, -2.2); root.add(t1);
-  slot(slots, 'table-1a', root, CX - 0.21, 0.44, -2.25, 0.36, 0.42, { zone: 'Meja Tengah Lounge', ry: 0.12 });
-  slot(slots, 'table-1b', root, CX + 0.21, 0.44, -2.25, 0.36, 0.42, { zone: 'Meja Tengah Lounge', ry: -0.12 });
+  surface(surfs, 'table-1', root, CX, 0.44, -2.2, { r: 0.5 }, { zone: 'Meja Tengah Lounge' });
   const sd1 = sideTable('gold_side_1'); sd1.position.set(CX, 0, -1.1); root.add(sd1);
-  slot(slots, 'side-1', root, CX, 0.615, -1.12, 0.42, 0.45, { zone: 'Meja Samping Emas' });
+  surface(surfs, 'side-1', root, CX, 0.615, -1.1, { r: 0.27 }, { zone: 'Meja Samping Emas' });
   const t2 = roundTable('round_table_2'); t2.position.set(CX, 0, 0.05); root.add(t2);
-  slot(slots, 'table-2a', root, CX - 0.21, 0.44, 0.0, 0.36, 0.42, { zone: 'Meja Tengah Lounge', ry: 0.12 });
-  slot(slots, 'table-2b', root, CX + 0.21, 0.44, 0.0, 0.36, 0.42, { zone: 'Meja Tengah Lounge', ry: -0.12 });
+  surface(surfs, 'table-2', root, CX, 0.44, 0.05, { r: 0.5 }, { zone: 'Meja Tengah Lounge' });
   const nest = new THREE.Group(); nest.name = 'nesting_tables'; nest.position.set(CX - 0.15, 0, 1.6); root.add(nest);
   cyl(nest, 'nest_big', 0.45, 0.45, 0.44, MAT.espresso, 0, 0.22, 0, 64); cyl(nest, 'nest_small', 0.34, 0.34, 0.37, MAT.espresso, 0.62, 0.185, 0.3, 64);
   box(nest, 'nest_runner', 0.32, 0.004, 0.62, MAT.runner, 0.2, 0.443, 0.05).rotation.y = 0.5;
   shadows(nest);
-  slot(slots, 'nest-a', nest, 0, 0.444, 0, 0.5, 0.45, { zone: 'Meja Nesting Lounge' });
-  slot(slots, 'nest-b', nest, 0.62, 0.374, 0.3, 0.42, 0.42, { zone: 'Meja Nesting Lounge' });
+  surface(surfs, 'nest-a', nest, 0, 0.446, 0, { r: 0.43 }, { zone: 'Meja Nesting Lounge' });
+  surface(surfs, 'nest-b', nest, 0.62, 0.374, 0.3, { r: 0.32 }, { zone: 'Meja Nesting Lounge' });
 
   // west: entrance door, cube console + framed photograph, reading nook
   const door = new THREE.Group(); door.name = 'lattice_double_door'; door.position.set(-HX, 0, -5.55); door.rotation.y = Math.PI / 2; root.add(door);
@@ -1408,8 +1452,15 @@ function buildRoom({ products }) {
     gunungan: { label: 'Gunungan Console', pos: [CX, 1.6, 2.7], target: [CX, 1.1, HZ] },
     entrance: { label: 'Entrance & Console', pos: [0.8, 1.6, -2.1], target: [-HX, 1.15, -4.2] },
   };
+  // rak showcase terbuka di panel dinding (pengganti bingkai brand)
+  const over = (a0, a1, b0, b1) => a0 < b1 && b0 < a1;
+  const shelves = buildShowcase(root, wallPanels, { HX, blocked: {
+    skip: (side, z0, z1) => side === 'W' && (over(z0, z1, -2.65, 0.05) || z1 > 4.4),   // kursi baca & papan brand
+    wall: (side, z0, z1) => side === 'E' && over(z0, z1, -5.35, 1.25),                  // di belakang deretan sofa
+  } });
   const setBrandPanel = (list, title) => { const old = bpFace.material.map; bpFace.material.map = brandPanelTexture(list, title); bpFace.material.needsUpdate = true; old && old.dispose(); };
-  return { root, slots, interactives, presets, setBrandPanel, wallPanels, intro: { pos: [CX, 2.45, HZ - 0.3], target: [CX, 1.55, -HZ] }, bounds: { x: HX - 0.3, zMin: -HZ + 0.3, zMax: HZ - 0.3, yMin: 0.35, yMax: 2.6 } };
+  delete slots.__surf;
+  return { root, slots, surfaces: surfs, shelves, interactives, presets, setBrandPanel, wallPanels, intro: { pos: [CX, 2.45, HZ - 0.3], target: [CX, 1.55, -HZ] }, bounds: { x: HX - 0.3, zMin: -HZ + 0.3, zMax: HZ - 0.3, yMin: 0.35, yMax: 2.6 } };
 }
 
 return { buildRoom, makeDisplay };
@@ -1431,7 +1482,8 @@ const SECL = { craft: 'Kriya & Fashion', food: 'Makanan & Minuman' };
 const fobTxt = v => !v ? 'on request' : (/^\d/.test(v) ? 'USD ' + v : v);
 const rebuildIndex = () => { Object.keys(byId).forEach(k => delete byId[k]); PRODUCTS.forEach(p => { byId[p.id] = p; }); };
 const ZONES = { featured: 'Featured · Meja Ruang Mendag', table: 'Meja Tengah Lounge', side: 'Meja Samping Emas', nest: 'Meja Nesting Lounge', gunungan: 'Konsol Gunungan', console: 'Konsol Pintu Masuk' };
-const zoneOf = p => p.display ? (ZONES[p.display.split('-')[0]] || 'Ruang Mendag') : `Katalog PPPB ${state.year}`;
+const TLABEL = { featured: 'Featured · Meja Ruang Mendag', 'table-1': 'Meja Tengah Lounge', 'table-2': 'Meja Tengah Lounge', 'side-1': 'Meja Samping Emas', 'nest-a': 'Meja Nesting Lounge', 'nest-b': 'Meja Nesting Lounge', gunungan: 'Konsol Gunungan', console: 'Konsol Pintu Masuk' };
+const zoneOf = p => p.display ? (TLABEL[p.display] || 'Ruang Mendag') : 'Rak Showcase';
 const brandOf = p => p.brand || 'UMKM Pilihan BuSan';
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const ICONS = {
@@ -1446,6 +1498,7 @@ const ICONS = {
   scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/>',
   move: '<polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="22"/>',
   pointer: '<path d="M12.586 12.586 19 19"/><path d="M3.688 3.037a.497.497 0 0 0-.651.651l6.5 15.999a.501.501 0 0 0 .947-.062l1.569-6.083a2 2 0 0 1 1.448-1.479l6.124-1.579a.5.5 0 0 0 .063-.947z"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
   swap: '<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>',
   zoom: '<circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/>',
 };
@@ -1458,6 +1511,8 @@ const state = { entered: false, year: null, active: null, hovered: null, panel: 
 let three = null; // filled by init3D
 
 /* ---------- UI ---------- */
+if (ATUR) $('.nb-year').insertAdjacentHTML('beforebegin', '<button class="nb nb-atur" data-nav="atur" data-icon="edit"><span>Atur Pajangan</span></button>');
+const confirmReset = () => window.confirm('Batalkan semua perubahan yang belum disimpan?');
 $$('[data-icon]').forEach(el => el.insertAdjacentHTML('afterbegin', icon(el.dataset.icon, +(el.dataset.size || 18))));
 const drawer = $('#drawer'), modal = $('#modal'), tip = $('#tip');
 
@@ -1490,7 +1545,86 @@ function openDrawer(mode = 'all', group = 'Semua') {
   drawer.classList.add('open');
   $$('input[name=grp]', drawer).forEach(r => r.onchange = () => openDrawer('all', r.value));
 }
-function closeDrawer() { drawer.classList.remove('open'); state.panel = null; if (!modal.classList.contains('open')) setNav('explore'); }
+function closeDrawer() { drawer.classList.remove('open'); state.panel = null; three && three.highlight && three.highlight(null); if (!modal.classList.contains('open')) setNav('explore'); }
+
+
+/* ---------- Mode Atur Pajangan (?atur) ---------- */
+// Pilih meja → tambah/lepas produk. Muat atau tidaknya dihitung dari ukuran model 3D.
+// Produk yang dilepas kembali ke rak showcase. Simpan = unduh data/pajangan.js, lalu pengelola menyimpannya ke repo (Cloudflare tayang otomatis). Susunan yang belum disimpan tetap ada di browser ini.
+const at = { table: 'featured', q: '' };
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
+function toast(msg, ms = 3200) { let t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; document.body.appendChild(t); } t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), ms); }
+const dirty = () => JSON.stringify(PAJ.cur) !== JSON.stringify(PAJ.saved);
+function saveDraft() { lsSet(DRAFT_KEY, dirty() ? JSON.stringify(PAJ.cur) : null); }
+function tableOf(pid) { const t = pajanganFor(state.year); return Object.keys(t).find(k => t[k].includes(pid)) || null; }
+function syncProducts() { const t = pajanganFor(state.year); PRODUCTS.forEach(p => { p.display = Object.keys(t).find(k => t[k].includes(p.id)) || null; p.featured = !!p.display; }); }
+function relayout() { syncProducts(); const L = three ? three.layout() : { dropped: [], usage: {} }; return L; }
+function moveTo(pid, table) {
+  const t = pajanganFor(state.year), from = tableOf(pid);
+  if (from === table) return true;
+  if (from) t[from] = t[from].filter(x => x !== pid);
+  if (table) (t[table] = t[table] || []).push(pid);
+  const L = relayout();
+  if (table && L.dropped.includes(pid)) {   // tidak muat → batalkan
+    t[table] = t[table].filter(x => x !== pid); if (from) t[from].push(pid); relayout();
+    toast('Tidak muat di ' + (TABLES.find(x => x.id === table)?.label || 'meja ini') + '. Lepas produk lain dulu, atau pilih meja yang lebih besar.', 4200);
+    return false;
+  }
+  saveDraft(); return true;
+}
+function pajanganJS(data) {
+  const name = id => { const b = CAT_ALL.find(x => x.products.some(q => q.id === id)); const q = b && b.products.find(q => q.id === id); return b ? `${b.brand}: ${q.name}` : ''; };
+  const lines = ['// Produk yang DIPAJANG di meja-meja Ruang Mendag, per angkatan.',
+    '// Satu meja bisa berisi beberapa produk; muat atau tidaknya dihitung dari ukuran model 3D',
+    '// (data/model3d.js). Produk yang tidak tercantum di sini tampil di rak showcase di dinding.',
+    '// Cara termudah mengubahnya: buka situs dengan ?atur di belakang alamat (Mode Atur Pajangan),',
+    '// atur langsung di ruangan, lalu tekan Simpan.',
+    '// Meja: ' + TABLES.map(t => t.id).join(', ') + '.', 'window.PAJANGAN = {'];
+  Object.keys(data).sort().forEach(y => {
+    lines.push(`  '${y}': {`);
+    TABLES.forEach(t => { const ids = (data[y][t.id] || []); if (!ids.length) return; lines.push(`    '${t.id}': [`); ids.forEach(id => lines.push(`      '${id}',`.padEnd(52) + `// ${name(id)}`)); lines.push('    ],'); });
+    lines.push('  },');
+  });
+  lines.push('};', ''); return lines.join('\n');
+}
+function downloadPajangan() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([pajanganJS(PAJ.cur)], { type: 'text/javascript' })); a.download = 'pajangan.js'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+function openAtur(table = at.table) {
+  if (!ATUR) return;
+  const keep = $('.at-body', drawer)?.scrollTop || 0;
+  closeModal(false); at.table = table; state.panel = 'atur'; setNav('atur');
+  const L = state.layout || { usage: {} }, t = pajanganFor(state.year), cur = TABLES.find(x => x.id === table);
+  const on = (t[table] || []).map(id => byId[id]).filter(Boolean);
+  const q = at.q.toLowerCase(), pool = PRODUCTS.filter(p => !p.display && (!q || (p.name + ' ' + p.brand).toLowerCase().includes(q)));
+  const pct = id => Math.min(100, Math.round((L.usage[id] || 0) * 100 / 0.62));   // ±62% luas meja = penuh
+  drawer.innerHTML = `${corners}
+    <div class="dr-head">
+      <div><h6 class="kicker">Mode Atur · PPPB ${state.year}</h6><h2>Atur Pajangan</h2>
+      <p class="text-muted">Pilih meja, lalu tambah produk. Produk yang tidak di meja otomatis tampil di rak showcase.</p></div>
+      <button class="btn btn-icon" data-act="close-drawer" aria-label="Tutup">${icon('x')}</button>
+    </div>
+    <div class="at-body">
+    <div class="at-tables">${TABLES.map(x => `<button class="at-t${x.id === table ? ' on' : ''}" data-act="at-table" data-t="${x.id}"><span>${esc(x.label)}</span><small>${(t[x.id] || []).length} produk</small><i style="width:${pct(x.id)}%"></i></button>`).join('')}</div>
+    <div class="at-sec"><div class="at-row"><h6>${esc(cur.label)}</h6><button class="btn btn-secondary btn-sm" data-act="at-look">${icon('scan', 14)}Lihat meja</button></div>
+      ${on.length ? `<ul class="at-list">${on.map(p => `<li><img src="${p.texture}" alt=""><span><b>${esc(p.name)}</b><small>${esc(p.brand)}</small></span><button class="btn btn-icon btn-sm" data-act="at-remove" data-p="${p.id}" aria-label="Lepas dari meja" title="Kembalikan ke rak">${icon('x', 14)}</button></li>`).join('')}</ul>` : '<p class="text-muted">Meja ini masih kosong.</p>'}
+    </div>
+    <div class="at-sec"><h6>Tambah dari rak</h6>
+      <input id="at-q" class="input" placeholder="Cari produk atau brand…" value="${esc(at.q)}">
+      <ul class="at-list at-pool">${pool.slice(0, 80).map(p => `<li><img loading="lazy" src="${p.texture}" alt=""><span><b>${esc(p.name)}</b><small>${esc(p.brand)}</small></span><button class="btn btn-primary btn-sm" data-act="at-add" data-p="${p.id}">Taruh</button></li>`).join('')}</ul>
+    </div>
+    <div class="at-foot">
+      <p class="${dirty() ? 'at-dirty' : 'text-muted'}">${dirty() ? '● Ada perubahan yang belum disimpan' : 'Semua perubahan sudah tersimpan'}</p>
+      <div class="at-btns">
+        <button class="btn btn-primary" data-act="at-download">Unduh file</button>
+        <button class="btn btn-secondary" data-act="at-reset" ${dirty() ? '' : 'disabled'}>Batalkan</button>
+      </div>
+      <p class="text-muted">Untuk menyimpan: tekan <b>Unduh file</b>, lalu kirim <code>pajangan.js</code> ke pengelola situs untuk disimpan ke GitHub. Situs ter-update otomatis.</p>
+    </div>
+    </div>`;
+  drawer.classList.add('open'); $('.at-body', drawer).scrollTop = keep;
+  const qi = $('#at-q'); qi.oninput = () => { at.q = qi.value; const pos = qi.selectionStart; openAtur(); const n = $('#at-q'); n.focus(); n.setSelectionRange(pos, pos); };
+  three && three.highlight && three.highlight(table);
+}
 
 const waNum = ph => { let d = String(ph || '').replace(/\D/g, ''); if (d.startsWith('0')) d = '62' + d.slice(1); else if (d.startsWith('8')) d = '62' + d; return d.length >= 9 ? d : null; };
 const href = u => /^https?:/i.test(u) ? u : 'https:/' + '/' + String(u).replace(/^\/+/, '');
@@ -1530,7 +1664,10 @@ function detailHTML(p) {
         <button class="btn btn-icon btn-secondary" data-act="next" aria-label="Berikutnya">${icon('right')}</button>
       </div>
       ${wa ? `<a class="btn btn-primary blueprint" href="https:/${'/'}wa.me/${wa}?text=${encodeURIComponent(waText)}" target="_blank" rel="noopener">${corners}WhatsApp</a>` : ''}
-      ${WEBGL && p.display ? `<button class="btn btn-secondary blueprint" data-act="view-in-room">${corners}${icon('scan', 16)}Lihat di ruangan</button>` : ''}
+      ${WEBGL ? `<button class="btn btn-secondary blueprint" data-act="view-in-room">${corners}${icon('scan', 16)}Lihat di ruangan</button>` : ''}
+    </div>
+    ${ATUR ? `<div class="at-detail"><label for="at-move">Pajang di</label><select id="at-move" class="input"><option value="">Rak showcase (tidak di meja)</option>${TABLES.map(x => `<option value="${x.id}" ${p.display === x.id ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select><button class="btn btn-primary btn-sm" data-act="at-move">Terapkan</button></div>` : ''}
+    <div hidden>
     </div>
   </div>`;
 }
@@ -1585,6 +1722,7 @@ document.addEventListener('click', e => {
     if (k === 'explore') return explore();
     if (k === 'about') return openAbout();
     if (k === 'year') return switchYear(state.year === '2025' ? '2026' : '2025');
+    if (k === 'atur') return state.panel === 'atur' ? closeDrawer() : openAtur();
     return state.panel === k ? closeDrawer() : openDrawer(k);
   }
   const a = t.dataset.act;
@@ -1594,6 +1732,13 @@ document.addEventListener('click', e => {
   if (a === 'next') stepDetail(1);
   if (a === 'explore') explore();
   if (a === 'view-in-room') { closeModal(); }
+  if (a === 'at-table') openAtur(t.dataset.t);
+  if (a === 'at-add') { if (moveTo(t.dataset.p, at.table)) toast('Ditaruh di ' + TABLES.find(x => x.id === at.table).label); openAtur(); }
+  if (a === 'at-remove') { moveTo(t.dataset.p, null); openAtur(); }
+  if (a === 'at-look') { three && three.lookTable(at.table); }
+  if (a === 'at-download') downloadPajangan();
+  if (a === 'at-reset') { if (confirmReset()) { PAJ.cur = JSON.parse(JSON.stringify(PAJ.saved)); saveDraft(); relayout(); openAtur(); } }
+  if (a === 'at-move') { const sel = $('#at-move'); if (sel) { const ok = moveTo(state.active, sel.value || null); if (ok) toast(sel.value ? 'Dipindah ke ' + TABLES.find(x => x.id === sel.value).label : 'Dikembalikan ke rak'); showModal(detailHTML(byId[state.active]), 'is-detail'); } }
 });
 modal.addEventListener('pointerdown', e => { if (e.target === modal) closeModal(); });
 document.addEventListener('keydown', e => {
@@ -1673,57 +1818,55 @@ async function init3D() {
   const aboutTex = await load(SHOWROOM.aboutImage);
   if (aboutTex) { const d = makeDisplay(aboutTex, room.slots.about, { style: 'wall' }); d.userData.action = 'about'; d.userData.label = 'Ruang Mendag'; d.userData.sub = 'About Pilihan BuSan'; dispList.push(d); }
   let yearToken = 0;
-  // ---- catalogue wall: every brand of the chosen year hangs as a framed tile on the wall panels ----
-  // craft & fashion on the east feature wall (grey + dark panels, 4 rows), food & beverage on the west wall (5 rows)
-  const tileSlots = { E: [], W: [] }, tiles = {};
-  const COLS = { grey: [-0.235, 0.235], dark: [0], slat: [-0.235, 0.235] };
-  room.wallPanels.forEach(wp => {
-    const cols = COLS[wp.type]; if (!cols) return;
-    if (wp.side === 'E' && wp.type === 'slat') return;               // keep the gold-leaf feature panel clear
-    if (wp.side === 'W' && wp.zc + wp.w / 2 > 4.4) return;            // keep the brand information panel clear
-    const rows = wp.side === 'E' ? [2.47, 2.02, 1.57, 1.12] : [2.47, 2.02, 1.57, 1.12, 0.67];
-    const dir = wp.side === 'E' ? 1 : -1;
-    rows.forEach(y => cols.forEach(x => {
-      const a = new THREE.Object3D(); a.name = 'slot_tile'; a.position.set(x, y, 0.05); a.userData = { maxW: 0.33, maxH: 0.39 };
-      wp.g.add(a); tileSlots[wp.side].push({ a, z: wp.zc + dir * x, y });
-    }));
-  });
-  ['E', 'W'].forEach(k => tileSlots[k].sort((p, q) => p.z - q.z || q.y - p.y));
-  async function setYearTiles(year, my) {
-    Object.keys(tiles).forEach(id => {
-      const d = tiles[id]; d.parent && d.parent.remove(d);
-      d.traverse(o => { if (o.isMesh) { o.geometry.dispose(); if (o.material.name === 'product_photo') { o.material.map && o.material.map.dispose(); o.material.dispose(); } } });
-      const k = dispList.indexOf(d); if (k >= 0) dispList.splice(k, 1); delete tiles[id];
+  const aboutList = dispList.slice();
+  // ---- produk 3D: satu model per produk (js/produk3d.js + data/model3d.js), ditata di meja pajang
+  // (data/pajangan.js / Mode Atur) dan sisanya di rak showcase terbuka (js/tata.js) ----
+  const loadImg = src => new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+  function modelFor(p, img) {
+    const spec = (window.MODEL3D || {})[p.id] || { t: 'box', s: [0.15, 0.2, 0.06], c: [] };
+    const g = buildProduct(spec, img); g.name = 'product_' + p.id;
+    const sz = g.userData.size, mn = g.userData.min;
+    g.position.set(-(mn[0] + sz[0] / 2), -mn[1], -(mn[2] + sz[2] / 2));
+    const d = new THREE.Group(); d.name = 'display'; d.add(g);
+    d.userData = { pid: p.id, model: g, hover: 0, style: 'model', k: 1, size: sz };
+    return d;
+  }
+  function disposeDisplay(d) {
+    d.parent && d.parent.remove(d);
+    d.traverse(o => { if (o.isMesh) { o.geometry.dispose(); if (o.material.name === 'product_label') { o.material.map && o.material.map.dispose(); o.material.dispose(); } } });
+  }
+  function put(d, anchor, x, z, k, shadow) {
+    d.scale.setScalar(k); d.position.set(x, 0, z); d.userData.k = k; anchor.add(d); dispList.push(d);
+    d.traverse(o => { if (o.isMesh) { o.castShadow = !!shadow && !o.material.transparent; o.receiveShadow = false; } });
+  }
+  // susun ulang semua model sesuai PRODUCTS[].display; dipanggil juga dari Mode Atur
+  function layoutDisplays() {
+    Object.values(displays).forEach(d => d.parent && d.parent.remove(d));
+    dispList.length = 0; dispList.push(...aboutList);
+    room.setBrandPanel(PRODUCTS.filter(p => p.display), 'PPPB ' + state.year);
+    const onTable = {}, dropped = [], usage = {};
+    TABLES.forEach(t => {
+      const surf = room.surfaces[t.id]; if (!surf) return;
+      const items = PRODUCTS.filter(p => p.display === t.id && displays[p.id]).map(p => ({ id: p.id, size: displays[p.id].userData.size }));
+      const r = packSurface(surf, items);
+      Object.entries(r.place).forEach(([id, [x, z]]) => { put(displays[id], surf, x, z, 1, true); onTable[id] = t.id; });
+      dropped.push(...r.fail); usage[t.id] = r.used;
     });
-    const bs = CAT_ALL.filter(b => String(b.period).startsWith(year)).sort((a, b) => a.period.localeCompare(b.period));
-    const craft = bs.filter(b => b.section === 'craft'), food = bs.filter(b => b.section !== 'craft');
-    const plan = [...craft.map((b, i) => [b, tileSlots.E[i] || tileSlots.W[food.length + i - tileSlots.E.length]]), ...food.map((b, i) => [b, tileSlots.W[i] || tileSlots.E[craft.length + i - tileSlots.W.length]])];
-    const texs = await Promise.all(plan.map(([b]) => load(thumbOf(b))));
-    if (my !== yearToken) { texs.forEach(t => t && t.dispose()); return; }
-    plan.forEach(([b, sl], i) => {
-      if (!sl || !texs[i]) { console.warn('No wall slot/tile for', b.id); return; }
-      const d = makeDisplay(texs[i], sl.a, { style: 'tile' }); d.userData.bid = b.id; tiles[b.id] = d; dispList.push(d);
-    });
+    const rest = PRODUCTS.filter(p => displays[p.id] && !onTable[p.id]).map(p => ({ id: p.id, size: displays[p.id].userData.size, side: p.group === 'Makanan & Minuman' ? 'W' : 'E' }));
+    const sh = fillShelves(room.shelves, rest);
+    Object.entries(sh.place).forEach(([id, pl]) => put(displays[id], pl.comp.a, pl.x, 0, pl.k, false));
+    if (dropped.length) console.warn('Tidak muat di meja, dipindah ke rak:', dropped.join(', '));
+    if (sh.fail.length) console.warn('Rak penuh, tidak tampil:', sh.fail.join(', '));
+    return (state.layout = { onTable, dropped, shelfFail: sh.fail, usage });
   }
   async function setYearDisplays(year) {
     const my = ++yearToken;
-    Object.keys(displays).forEach(id => {
-      const d = displays[id]; d.parent && d.parent.remove(d);
-      d.traverse(o => { if (o.isMesh) { o.geometry.dispose(); if (o.material.map && o.material.name === 'product_photo') o.material.map.dispose(); } });
-      const k = dispList.indexOf(d); if (k >= 0) dispList.splice(k, 1); delete displays[id];
-    });
-    setYearTiles(year, my);
-    const shown = PRODUCTS.filter(p => p.display && room.slots[p.display]);
-    room.setBrandPanel(shown, 'PPPB ' + year);
-    const texs = await Promise.all(shown.map(p => load(p.texture)));
-    if (my !== yearToken) { texs.forEach(t => t && t.dispose()); return; }
-    shown.forEach((p, i) => {
-      const anchor = room.slots[p.display], tex = texs[i];
-      if (!tex) { console.warn('No texture for', p.id); return; }
-      const label = p.display === 'featured' ? `FEATURED · PPPB ${year}` : brandOf(p).toUpperCase();
-      const d = makeDisplay(tex, anchor, { label });
-      d.userData.pid = p.id; displays[p.id] = d; dispList.push(d);
-    });
+    Object.keys(displays).forEach(id => { disposeDisplay(displays[id]); delete displays[id]; });
+    dispList.length = 0; dispList.push(...aboutList);
+    const list = PRODUCTS.slice(), imgs = await Promise.all(list.map(p => loadImg('photos/cut/' + p.id + '.webp')));
+    if (my !== yearToken) return;
+    list.forEach((p, i) => { try { displays[p.id] = modelFor(p, imgs[i]); } catch (e) { console.warn('Model gagal dibuat:', p.id, e); } });
+    layoutDisplays();
   }
   room.interactives.forEach(it => Object.assign(it.mesh.userData, { action: it.action, label: it.label, sub: it.sub }));
   room.root.traverse(o => { if (o.isMesh && o.material.transparent) o.raycast = () => {}; });
@@ -1763,9 +1906,9 @@ async function init3D() {
   }
   function walkTo(pt) { const p = { x: pt.x, z: pt.z }; resolve(p); flyTo([p.x, EYE, p.z], null, Math.max(0.35, Math.hypot(p.x - fp.x, p.z - fp.z) / 3), null, true); }
   function productView(id) {
-    const d = displays[id] || tiles[id] || tiles[PID2BID[id]], photo = d.userData.photo;
-    const c = photo.getWorldPosition(new THREE.Vector3()), n = new THREE.Vector3(); d.parent.getWorldDirection(n); n.y = 0; n.normalize();
-    const dist = d.userData.style === 'tile' ? (mobile ? 1.75 : 1.3) : (mobile ? 1.45 : 1.1);
+    const d = displays[id], bx = new THREE.Box3().setFromObject(d), c = bx.getCenter(new THREE.Vector3()), sz = bx.getSize(new THREE.Vector3());
+    const n = new THREE.Vector3(); d.parent.getWorldDirection(n); n.y = 0; n.normalize();
+    const dist = Math.max(0.85, Math.max(sz.x, sz.y) * 2.4) * (mobile ? 1.3 : 1);
     return { pos: c.clone().addScaledVector(n, dist), target: c };
   }
 
@@ -1869,6 +2012,7 @@ async function init3D() {
       const tgt = key && (state.hovered === key || state.active === key || (u.bid && u.bid === activeB)) ? 1 : 0;
       if (Math.abs(tgt - u.hover) < 0.001 && !u.dirty) continue;
       u.hover += (tgt - u.hover) * Math.min(1, dt * 9);
+      if (u.style === 'model') { d.scale.setScalar(u.k * (1 + u.hover * 0.06)); d.position.y = u.hover * 0.02; continue; }
       d.scale.setScalar(1 + u.hover * (u.style === 'tile' ? 0.08 : 0.035));
       u.frameMat.emissiveIntensity = u.hover * 0.7;
       const c = 0.86 + u.hover * 0.14; u.photoMat.color.setRGB(c, c, c);
@@ -1881,7 +2025,22 @@ async function init3D() {
   }
   requestAnimationFrame(loop);
 
+  // Mode Atur: tandai meja yang dipilih & arahkan kamera ke meja
+  const hlMat = new THREE.MeshBasicMaterial({ name: 'table_highlight', color: '#e3bb6c', transparent: true, opacity: 0.9, toneMapped: false, depthWrite: false });
+  let hl = null;
+  function highlight(id) {
+    if (hl) { hl.parent && hl.parent.remove(hl); hl.geometry.dispose(); hl = null; }
+    const sf = id && room.surfaces[id]; if (!sf) return; const u = sf.userData;
+    let geo; if (u.r) geo = new THREE.RingGeometry(u.r - 0.012, u.r + 0.006, 72);
+    else { const o = new THREE.Shape(); o.moveTo(-u.w / 2, -u.d / 2); o.lineTo(u.w / 2, -u.d / 2); o.lineTo(u.w / 2, u.d / 2); o.lineTo(-u.w / 2, u.d / 2); const hpath = new THREE.Path(); const e = 0.016; hpath.moveTo(-u.w / 2 + e, -u.d / 2 + e); hpath.lineTo(-u.w / 2 + e, u.d / 2 - e); hpath.lineTo(u.w / 2 - e, u.d / 2 - e); hpath.lineTo(u.w / 2 - e, -u.d / 2 + e); o.holes.push(hpath); geo = new THREE.ShapeGeometry(o); }
+    hl = new THREE.Mesh(geo, hlMat); hl.name = 'table_highlight'; hl.rotation.x = -Math.PI / 2; hl.position.y = 0.004; hl.raycast = () => {}; sf.add(hl);
+  }
+  function lookTable(id) {
+    const sf = room.surfaces[id]; if (!sf) return; const c = sf.getWorldPosition(new THREE.Vector3()), n = new THREE.Vector3(); sf.getWorldDirection(n); n.y = 0; n.normalize();
+    const u = sf.userData, size = u.r ? u.r * 2 : u.w; flyTo(c.clone().addScaledVector(n, Math.max(1.0, size * 1.1) * (mobile ? 1.3 : 1)), c, 1.2);
+  }
   three = {
+    highlight, lookTable,
     enter() {
       expo = { from: 0.25, start: performance.now(), dur: 1600 };
       const deep = decodeURIComponent(location.hash.slice(1));
@@ -1894,9 +2053,10 @@ async function init3D() {
     },
     preset(k) { const p = room.presets[k]; if (p) flyTo(p.pos, p.target, 1.5); },
     setYear: setYearDisplays,
-    focus(id, done, quick) { if (!displays[id] && !tiles[PID2BID[id]]) return done && done(); const v = productView(id); flyTo(v.pos, v.target, quick ? 0.9 : 1.2, done); },
+    focus(id, done, quick) { if (!displays[id] || !displays[id].parent) return done && done(); const v = productView(id); flyTo(v.pos, v.target, quick ? 0.9 : 1.2, done); },
+    layout: layoutDisplays,
   };
-  window.__showroom = { camera, scene, renderer, flyTo, three, fp, RECTS, displays, tiles };
+  window.__showroom = { camera, scene, renderer, flyTo, three, fp, RECTS, displays, room };
   ready('Ruangan siap');
 }
 
